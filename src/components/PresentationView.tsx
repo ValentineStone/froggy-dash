@@ -8,7 +8,6 @@ const dbSelector = store => [store.db, store.selected, store.user]
 export const PresentationView = () => {
   const [db, selected, user] = useSelector(dbSelector)
   const [sensorData, setSensorData] = useState(null)
-  if (!db) return null
   useEffect(() => {
     if (!selected?.sensor) return setSensorData(false)
     const readings = db.readings[user.uid][selected.multifrog][selected.frog][selected.sensor]
@@ -32,6 +31,7 @@ export const PresentationView = () => {
       ]
     })
   }, [selected?.sensor])
+  if (!db) return null
   return <>
     <h1>
       Selected: {selected?.multifrog ? <br /> : 'nothing'}
