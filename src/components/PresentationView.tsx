@@ -10,7 +10,7 @@ export const PresentationView = () => {
   const [sensorData, setSensorData] = useState(null)
   useEffect(() => {
     if (!selected?.sensor) return setSensorData(false)
-    const readings = db.readings[user.uid][selected.multifrog][selected.frog][selected.sensor]
+    const readings = db.readings[selected.sensor]
     const sensor = db.sensors[selected.sensor]
     setSensorData({
       labels: Object.keys(readings).map(v => new Date(+v).toLocaleString('ru-RU', {

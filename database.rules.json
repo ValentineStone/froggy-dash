@@ -1,6 +1,26 @@
 {
   "rules": {
-    ".read": true,
-    ".write": false
+		".read": true,
+		".write": false,
+    "users": { "$uid": {
+      ".read": "$uid === auth.uid",
+      ".write": "$uid === auth.uid"
+    } },
+    "multifrogs": { "$uid": {
+      ".read": "data.child('user').val() === auth.uid",
+      ".write": "data.child('user').val() === auth.uid"
+    } },
+    "frogs": { "$uid": {
+      ".read": "data.child('user').val() === auth.uid",
+      ".write": "data.child('user').val() === auth.uid"
+    } },
+    "sensors": { "$uid": {
+      ".read": "data.child('user').val() === auth.uid",
+      ".write": "data.child('user').val() === auth.uid"
+    } },
+    "readings": { "$uid": {
+      ".read": "root.child('sensors').child($uid).child('user').val() === auth.uid",
+      ".write": "root.child('sensors').child($uid).child('user').val() === auth.uid"
+    } }
   }
 }
