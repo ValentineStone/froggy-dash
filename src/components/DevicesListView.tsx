@@ -18,15 +18,17 @@ export const DevicesListView = () => {
             multifrog: rest[0],
             frog: rest[1],
             sensor: rest[2],
+            presentation: rest[3],
+            something: rest[0] || rest[1] || rest[2] || rest[3]
           }
         })
     })
     if (db) setItems(() => {
       const multifrogs = Object.keys(db.multifrogs).sort()
       return [
-        $('Представление 1'),
+        $('Комнаты', null, null, null, 'rooms'),
         [
-          $('Лягушки'),
+          $('Лягушки', null, null, null, 'frogs'),
           ...multifrogs.map((id1, index1) => {
             const frogs = Object.keys(db.multifrogs[id1].frogs).sort()
             return [
