@@ -1,10 +1,10 @@
 import { memo } from 'react'
 import Chart from './Chart'
 
-const options = (data, labels, line) => ({
+const options = (data, labels, line, aspectRatio = 3 / 4) => ({
   type: 'line',
   options: {
-    aspectRatio: 3 / 4,
+    aspectRatio,
     plugins: {
       legend: { display: false },
       tooltip: { displayColors: false }
@@ -60,13 +60,18 @@ const formatDate = v => new Date(+v).toLocaleString('ru-RU', {
   second: '2-digit',
 })
 
-const PresentationView = ({ sensor, readings }) => {
+const PresentationView = ({ sensor, readings, aspectRatio = undefined }) => {
   const { readingCritical } = sensor.meta
   const keys = Object.keys(readings)
   const values = Object.values(readings)
   const critical = values[values.length - 1] >= readingCritical
   const labels = keys.map(formatDate)
-  const chartjs = options(values, labels, readingCritical)
+  const chartjs = options(
+    values,
+    labels,
+    readingCritical,
+    aspectRatio,
+  )
   return (
     <Chart chartjs={chartjs} style={{
       border: '2px solid black',

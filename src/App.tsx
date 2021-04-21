@@ -11,7 +11,7 @@ ul, ol { padding: 0 }
 
 /* Remove default margin */
 body, h1, h2, h3, h4, p, ul, ol, li, figure,
-figcaption, blockquote, dl, dd { margin: 0 }
+figcaption, blockquote, dl, dd, pre { margin: 0 }
 
 /* Make body (and app) like in html 4 */
 body, html, #app { height: 100% }

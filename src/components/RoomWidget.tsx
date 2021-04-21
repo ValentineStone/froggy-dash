@@ -6,16 +6,14 @@ const Flex = styles.div`
   display: flex;
   flex-flow: row wrap;
   & > * {
-    width: 100%;
     padding: 0.5em;
+    width: 100%;
   }
-
-  @media only screen and (min-width: 750px) {
+  @media only screen and (min-width: 800px) {
     & > * {
       width: 50%;
     }
   }
-
   @media only screen and (min-width: 1200px) {
     & > * {
       width: 25%;
@@ -29,9 +27,8 @@ const RoomWidget = () => {
   return (
     <Flex>
       {Object.keys(sensors).map(uuid =>
-        <div>
+        <div key={uuid}>
           <RoomWidgetChart
-            key={uuid}
             sensor={sensors[uuid]}
             readings={readings[uuid]}
           />
