@@ -21,7 +21,7 @@ const Flex = styles.div`
   }
 `
 
-const sensorSelector = store => [store.db.sensors, store.db.readings]
+const sensorSelector = store => [store.sensors, store.readings]
 const RoomWidget = () => {
   const [sensors, readings] = useSelector(sensorSelector)
   return (

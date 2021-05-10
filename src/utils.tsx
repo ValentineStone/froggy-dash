@@ -182,15 +182,22 @@ import { EventEmitter } from 'events'
 //@ts-ignore
 EventEmitter.captureRejections = true
 
+interface TinyEmitter {
+  on: (event: string, cb: (...args) => any) => any
+  once: (event: string, cb: (...args) => any) => any
+  off: (event: string, cb: (...args) => any) => any
+  emit?: (event: string, ...args) => any
+}
+
 type Listener = (...args: any[]) => void
 
-const subscribe_one = (emitter: EventEmitter, event: string, func: Listener) => {
+const subscribe_one = (emitter: TinyEmitter, event: string, func: Listener) => {
   emitter.on(event, func)
   return () => emitter.off(event, func)
 }
 
 export const subscribe = (
-  emitter: EventEmitter,
+  emitter: TinyEmitter,
   event: string, func: Listener,
   ...morelisteners: any
 ) => {
@@ -202,22 +209,31 @@ export const subscribe = (
   return () => unsubbers.forEach(call)
 }
 
+export const unsubs = () => {
+  const unsubbers = []
+  return (fn?: GenericFunction) => {
+    if (fn) unsubbers.push(fn)
+    else return () => unsubbers.forEach(call)
+  }
+}
+
 export const once = (
-  emitter: EventEmitter,
+  emitter: TinyEmitter,
   event: string,
   check?: (...arg: any) => any,
   transform?: (...arg: any) => any,
+  doCatch = true
 ) => {
   return new Promise((resolve, reject) => {
     const listen = (...args) => {
       if (!check || check(...args)) {
-        emitter.off('error', reject)
+        if (doCatch) emitter.off('error', reject)
         resolve(transform ? transform(...args) : args[0])
       }
       else emitter.once(event, listen)
     }
     emitter.once(event, listen)
-    emitter.once('error', reject)
+    if (doCatch) emitter.once('error', reject)
   }) as Promise<any>
 }
 
@@ -358,31 +374,7 @@ export const interpolate = (delta = 0) => {
   return { next, now }
 }
 
-type EE<T extends keyof EventEmitter> = Parameters<EventEmitter[T]>
-export class ArrayEventEmitter extends Array implements EventEmitter {
-  #ee: EventEmitter
-  constructor(...args) {
-    super(...args)
-    this.#ee = new EventEmitter()
-  }
-  addListener = (...a: EE<'addListener'>) => (this.#ee.addListener(...a), this)
-  emit = (...a: EE<'emit'>) => this.#ee.emit(...a)
-  eventNames = (...a: EE<'eventNames'>) => this.#ee.eventNames(...a)
-  getMaxListeners = (...a: EE<'getMaxListeners'>) => this.#ee.getMaxListeners(...a)
-  listenerCount = (...a: EE<'listenerCount'>) => this.#ee.listenerCount(...a)
-  listeners = (...a: EE<'listeners'>) => this.#ee.listeners(...a)
-  off = (...a: EE<'off'>) => (this.#ee.off(...a), this)
-  on = (...a: EE<'on'>) => (this.#ee.on(...a), this)
-  once = (...a: EE<'once'>) => (this.#ee.once(...a), this)
-  prependListener = (...a: EE<'prependListener'>) => (this.#ee.prependListener(...a), this)
-  prependOnceListener = (...a: EE<'prependOnceListener'>) => (this.#ee.prependOnceListener(...a), this)
-  removeAllListeners = (...a: EE<'removeAllListeners'>) => (this.#ee.removeAllListeners(...a), this)
-  removeListener = (...a: EE<'removeListener'>) => (this.#ee.removeListener(...a), this)
-  setMaxListeners = (...a: EE<'setMaxListeners'>) => (this.#ee.setMaxListeners(...a), this)
-  rawListeners = (...a: EE<'rawListeners'>) => (this.#ee.rawListeners(...a), this)
-}
-
-export const proxy_events = (source: EventEmitter, dest: EventEmitter, ...events: string[]) => {
+export const proxy_events = (source: TinyEmitter, dest: TinyEmitter, ...events: string[]) => {
   const listeners = events.map(e => (...args) => dest.emit(e, ...args))
   events.forEach((e, i) => source.on(e, listeners[i]))
   return () => events.forEach((e, i) => source.off(e, listeners[i]))
@@ -474,5 +466,17 @@ export const throttledInterval = (func?: GenericFunction, ms?: number) => {
     )
     id = local_id
     return () => clearInterval(local_id)
+  }
+}
+
+export const effect = effect => {
+  let uneffect = null
+  return () => {
+    if (uneffect) {
+      uneffect()
+      uneffect = null
+    } else {
+      uneffect = effect() || identity
+    }
   }
 }

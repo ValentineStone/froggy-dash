@@ -27,6 +27,10 @@ export const firebaseConfig = {
 firebase.initializeApp(firebaseConfig)
 export const database = firebase.database()
 export const auth = firebase.auth()
+//@ts-ignore
+window.getAuthToken = () => auth.currentUser.getIdToken(/* forceRefresh */ true)
+  .then(console.log)
+  .catch(console.error)
 
 export const logout = () => auth.signOut()
 export const logoutAndReload = () => auth.signOut()

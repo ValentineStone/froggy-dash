@@ -4,10 +4,13 @@ import RoomWidgetChart from './RoomWidgetChart'
 import RoomWidget from './RoomWidget'
 import MetaEditorWidget from './MetaEditorWidget'
 
-const dbSelector = store => [store.db, store.selected]
+const selectedSelector = store => [
+  store.sensors[store.selected?.sensor],
+  store.readings[store.selected?.sensor],
+  store.selected
+]
 export const PresentationView = () => {
-  const [db, selected] = useSelector(dbSelector)
-  if (!db) return null
+  const [sensor, readings, selected] = useSelector(selectedSelector)
   return (
     <>
       <h1>
@@ -38,8 +41,8 @@ export const PresentationView = () => {
           >
             <RoomWidgetChart
               aspectRatio={1}
-              readings={db.readings[selected.sensor]}
-              sensor={db.sensors[selected.sensor]}
+              sensor={sensor}
+              readings={readings}
             />
           [{selected.sensor}]
         </div>
@@ -49,12 +52,6 @@ export const PresentationView = () => {
         <summary><b>{'Firebase API keys:'}</b></summary>
         <pre>
           {JSON.stringify(firebaseConfig, null, 2)}
-        </pre>
-      </details>
-      <details style={{ padding: '1em' }}>
-        <summary>Database</summary>
-        <pre>
-          {JSON.stringify(db, null, 2)}
         </pre>
       </details>
     </>

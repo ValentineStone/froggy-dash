@@ -1,5 +1,5 @@
 import { createStore } from 'redux'
-import { set as lodashSet } from 'lodash'
+import { set as lodashSet, get as lodashGet } from 'lodash'
 
 class Reducers {
   set(setter, state) {
@@ -7,7 +7,7 @@ class Reducers {
       if (Array.isArray(setter)) {
         const [path, value] = setter
         if (typeof value === 'function')
-          return lodashSet(state, path, value(state[path]))
+          return lodashSet(state, path, value(lodashGet(state, path)))
         else
           return lodashSet(state, path, value)
       }
@@ -15,7 +15,7 @@ class Reducers {
         for (const path in setter) {
           const value = setter[path]
           if (typeof value === 'function')
-            lodashSet(state, path, value(state[path]))
+            lodashSet(state, path, value(lodashGet(state, path)))
           else
             lodashSet(state, path, value)
         }
@@ -56,10 +56,11 @@ const default_state = {
   user: undefined,
   selected_actively: false,
   selected: null,
-  selected_drone: null,
-  drones: [],
-  drones_map: {},
-  drones_meta: {},
+  users: {},
+  multifrogs: {},
+  frogs: {},
+  sensors: {},
+  readings: {},
 }
 
 function rootReducer(state = default_state, action) {

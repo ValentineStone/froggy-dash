@@ -3,9 +3,13 @@ import { useSelector, useDispatch, log } from '../utils'
 
 import ListView from './ListView'
 
-const dbSelector = store => store.db
+const frogsSelector = store => [
+  store.multifrogs,
+  store.frogs,
+  //store.sensors,
+]
 export const DevicesListView = () => {
-  const db = useSelector(dbSelector)
+  const [multifrogs, frogs, sensors] = useSelector(frogsSelector)
   const [items, setItems] = useState([])
   const dispatch = useDispatch()
   useEffect(() => {
@@ -23,21 +27,21 @@ export const DevicesListView = () => {
           }
         })
     })
-    if (db) setItems(() => {
-      const multifrogs = Object.keys(db.multifrogs).sort()
+    setItems(() => {
+      const multifrog_ids = Object.keys(multifrogs).sort()
       return [
         $('Комнаты', null, null, null, 'rooms'),
         [
           $('Лягушки', null, null, null, 'frogs'),
-          ...multifrogs.map((id1, index1) => {
-            const frogs = Object.keys(db.multifrogs[id1].frogs).sort()
+          ...multifrog_ids.map((id1, index1) => {
+            const frog_ids = Object.keys(multifrogs[id1]?.frogs || {}).sort()
             return [
               $(`Мульти ${index1 + 1}`, id1),
-              ...frogs.map((id2, index2) => {
-                const sensors = Object.keys(db.frogs[id2].sensors).sort()
+              ...frog_ids.map((id2, index2) => {
+                const sensor_ids = Object.keys(frogs[id2]?.sensors || {}).sort()
                 return [
                   $(`Лягушка ${index1 + 1}.${index2 + 1}`, id1, id2),
-                  ...sensors.map((id3, index3) => {
+                  ...sensor_ids.map((id3, index3) => {
                     return $(`Сенсор ${index1 + 1}.${index2 + 1}.${index3 + 1}`, id1, id2, id3)
                   })
                 ]
@@ -48,7 +52,7 @@ export const DevicesListView = () => {
         ]
       ]
     })
-  }, [db])
+  }, [multifrogs, frogs])
   return (
     <ListView items={items} />
   )

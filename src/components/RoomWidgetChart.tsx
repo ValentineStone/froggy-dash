@@ -60,7 +60,7 @@ const formatDate = v => new Date(+v).toLocaleString('ru-RU', {
   second: '2-digit',
 })
 
-const PresentationView = ({ sensor, readings, aspectRatio = undefined }) => {
+const RoomWidgetChart = ({ sensor, readings, aspectRatio = undefined }) => {
   const { readingCritical } = sensor.meta
   const keys = Object.keys(readings)
   const values = Object.values(readings)
@@ -80,4 +80,4 @@ const PresentationView = ({ sensor, readings, aspectRatio = undefined }) => {
   )
 }
 
-export default memo(PresentationView)
+export default memo(RoomWidgetChart)
