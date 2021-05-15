@@ -61,11 +61,11 @@ export const PresentationView = () => {
       }
       <Section>
         <Subheading>Firebase API keys:</Subheading>
-        <ObjectInspector data={firebaseConfig} />
+        <ObjectInspector expandLevel={1} data={firebaseConfig} />
       </Section>
       <Section>
         <Subheading>Store:</Subheading>
-        <ObjectInspector data={store} />
+        <ObjectInspector expandLevel={1} data={store} />
       </Section>
     </>
   )
