@@ -3,14 +3,25 @@ import { firebaseConfig } from '../firebase'
 import RoomWidgetChart from './RoomWidgetChart'
 import RoomWidget from './RoomWidget'
 import MetaEditorWidget from './MetaEditorWidget'
+import styled from 'styled-components'
+
+const Subheading = styled.h3`margin-bottom: 0.6rem;`
+const Section = styled.section`
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid lightgray;
+`
+
+import { ObjectInspector } from 'react-inspector'
 
 const selectedSelector = store => [
   store.sensors[store.selected?.sensor],
   store.readings[store.selected?.sensor],
-  store.selected
+  store.selected,
+  store
 ]
 export const PresentationView = () => {
-  const [sensor, readings, selected] = useSelector(selectedSelector)
+  const [sensor, readings, selected, store] = useSelector(selectedSelector)
   return (
     <>
       <h1>
@@ -48,12 +59,14 @@ export const PresentationView = () => {
         </div>
         </>
       }
-      <details style={{ background: 'lightgray', padding: '1em' }}>
-        <summary><b>{'Firebase API keys:'}</b></summary>
-        <pre>
-          {JSON.stringify(firebaseConfig, null, 2)}
-        </pre>
-      </details>
+      <Section>
+        <Subheading>Firebase API keys:</Subheading>
+        <ObjectInspector data={firebaseConfig} />
+      </Section>
+      <Section>
+        <Subheading>Store:</Subheading>
+        <ObjectInspector data={store} />
+      </Section>
     </>
   )
 }
