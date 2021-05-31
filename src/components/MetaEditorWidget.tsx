@@ -1,12 +1,20 @@
 import { TextField } from '@material-ui/core'
+import { Button } from '@material-ui/core'
 import styled from 'styled-components'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { database } from '../firebase'
 
 const MetaEditorWidgetRoot = styled.div`
   & > * {
     margin: 1em !important;
   }
+`
+
+const AddReading = styled.div`
+  display: inline-flex;
+  flex-direction: column;
+  border: 1px solid lightgray;
+  padding: 1rem;
 `
 
 const format = str =>
@@ -19,6 +27,7 @@ const format = str =>
 
 export default function MetaEditorWidget({ path }) {
   const [state, setState] = useState({})
+  const readingsPath = path.replace('sensors', 'readings')
   useEffect(() => {
     const metaRef = database.ref(path + '/meta')
     const onValue = s => setState(s.val())
@@ -33,6 +42,20 @@ export default function MetaEditorWidget({ path }) {
       value = String(value).startsWith('t') ? true : false
     database.ref(path + '/meta').update({ [key]: value })
   }
+  const readingRef = useRef(null)
+  const [addedReading, setAddedReading] = useState(null)
+  const onAddReading = () => {
+    if (!readingRef.current) return
+    const time = String(Date.now())
+    const value = Number(readingRef.current.value)
+    database.ref(readingsPath).update({ [time]: value })
+    setAddedReading(time)
+  }
+  const onCancelReading = () => {
+    if (!addedReading) return
+    database.ref(readingsPath).update({ [addedReading]: null })
+    setAddedReading(null)
+  }
   return (
     <MetaEditorWidgetRoot>
       {Object.entries(state).map(([key, value]) =>
@@ -45,6 +68,19 @@ export default function MetaEditorWidget({ path }) {
           onChange={onChange(key, typeof value)}
         />
       )}
+      <br />
+      <AddReading>
+        <TextField
+          margin="none"
+          label="Reading value"
+          defaultValue={12}
+          inputRef={readingRef}
+        />
+        <Button color="primary" onClick={onAddReading}>Add reading</Button>
+        {!!addedReading &&
+          <Button color="primary" onClick={onCancelReading}>Cancel</Button>
+        }
+      </AddReading>
     </MetaEditorWidgetRoot>
   )
 }
