@@ -29,6 +29,7 @@ const RoomWidget = () => {
       {Object.keys(sensors).map(uuid =>
         <div key={uuid}>
           <RoomWidgetChart
+            key={uuid}
             sensor={sensors[uuid]}
             readings={readings[uuid]}
           />

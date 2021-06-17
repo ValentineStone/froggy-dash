@@ -51,6 +51,13 @@ export default function MetaEditorWidget({ path }) {
     database.ref(readingsPath).update({ [time]: value })
     setAddedReading(time)
   }
+  const onPurge = () => {
+    if (!readingRef.current) return
+    const time1 = String(Date.now() - 1000)
+    const time2 = String(Date.now())
+    const value = Number(readingRef.current.value)
+    database.ref(readingsPath).set({ [time1]: value, [time2]: value })
+  }
   const onCancelReading = () => {
     if (!addedReading) return
     database.ref(readingsPath).update({ [addedReading]: null })
@@ -80,6 +87,7 @@ export default function MetaEditorWidget({ path }) {
         {!!addedReading &&
           <Button color="primary" onClick={onCancelReading}>Cancel</Button>
         }
+        <Button color="primary" onClick={onPurge}>Purge</Button>
       </AddReading>
     </MetaEditorWidgetRoot>
   )

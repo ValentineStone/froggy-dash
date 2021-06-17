@@ -51,6 +51,7 @@ export const PresentationView = () => {
             }}
           >
             <RoomWidgetChart
+              key={selected.sensor}
               aspectRatio={1}
               sensor={sensor}
               readings={readings}

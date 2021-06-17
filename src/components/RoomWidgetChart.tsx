@@ -62,8 +62,8 @@ const formatDate = v => new Date(+v).toLocaleString('ru-RU', {
 
 const RoomWidgetChart = ({ sensor, readings, aspectRatio = undefined }) => {
   const { readingCritical } = sensor.meta
-  const keys = Object.keys(readings)
-  const values = Object.values(readings)
+  const keys = Object.keys(readings).slice(-30);
+  const values = Object.values(readings).slice(-30);
   const critical = values[values.length - 1] >= readingCritical
   const labels = keys.map(formatDate)
   const chartjs = options(
