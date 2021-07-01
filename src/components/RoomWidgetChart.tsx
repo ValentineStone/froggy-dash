@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import { useSelector } from '../utils'
 import Chart from './Chart'
 
 const options = (data, labels, line, aspectRatio = 3 / 4) => ({
@@ -60,7 +61,9 @@ const formatDate = v => new Date(+v).toLocaleString('ru-RU', {
   second: '2-digit',
 })
 
-const RoomWidgetChart = ({ sensor, readings, aspectRatio = undefined }) => {
+const devmodeSelector = store => store.devmode
+const RoomWidgetChart = ({ uuid, sensor, readings, aspectRatio = undefined }) => {
+  const devmode = useSelector(devmodeSelector)
   const { readingCritical } = sensor.meta
   const keys = Object.keys(readings).slice(-30);
   const values = Object.values(readings).slice(-30);
@@ -72,12 +75,13 @@ const RoomWidgetChart = ({ sensor, readings, aspectRatio = undefined }) => {
     readingCritical,
     aspectRatio,
   )
-  return (
+  return <>
     <Chart chartjs={chartjs} style={{
       border: '2px solid black',
       backgroundColor: critical ? '#ff6044' : undefined,
     }} />
-  )
+    {devmode && `[${uuid}]`}
+  </>
 }
 
 export default memo(RoomWidgetChart)

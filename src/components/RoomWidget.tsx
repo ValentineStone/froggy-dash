@@ -1,5 +1,5 @@
 import styles from 'styled-components'
-import { useSelector } from '../utils'
+import { useSelector, log } from '../utils'
 import RoomWidgetChart from './RoomWidgetChart'
 
 const Flex = styles.div`
@@ -27,14 +27,16 @@ const RoomWidget = () => {
   return (
     <Flex>
       {Object.keys(sensors).map(uuid =>
-        <div key={uuid}>
-          <RoomWidgetChart
-            key={uuid}
-            sensor={sensors[uuid]}
-            readings={readings[uuid]}
-          />
-          [{uuid}]
-        </div>
+        !!sensors[uuid] && !!readings[uuid] && (
+          <div key={uuid}>
+            <RoomWidgetChart
+              key={uuid}
+              uuid={uuid}
+              sensor={sensors[uuid]}
+              readings={readings[uuid]}
+            />
+          </div>
+        )
       )}
     </Flex>
   )

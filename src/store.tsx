@@ -1,6 +1,17 @@
 import { createStore } from 'redux'
 import { set as lodashSet, get as lodashGet } from 'lodash'
 
+const selected_from_hash = () => {
+  const hash = location.hash.split('/').slice(1)
+  return {
+    presentation: hash[0],
+    multifrog: hash[1],
+    frog: hash[2],
+    sensor: hash[3],
+    something: hash[0] || hash[1] || hash[2] || hash[3]
+  }
+}
+
 class Reducers {
   set(setter, state) {
     if (typeof setter === 'object') {
@@ -27,16 +38,6 @@ class Reducers {
     }
   }
 
-  @selectDebounce(1)
-  select(uuid, state) {
-    if (uuid === state.selected)
-      uuid = null
-    return {
-      selected: uuid,
-      selected_drone: state.drones_map[uuid]
-    }
-  }
-
   refresh_online_status([uuid, is_online], state) {
     const drones_map = state.drones_map
     const drone = drones_map[uuid]
@@ -48,15 +49,36 @@ class Reducers {
       }
     }
   }
+
+  select() {
+    return {
+      selected: selected_from_hash()
+    }
+  }
+
+  devmode(_, state) {
+    if (state.devmode)
+      localStorage.removeItem('store:devmode')
+    else
+      localStorage.setItem('store:devmode', 'true')
+    return { devmode: !state.devmode }
+  }
+
+  appmenu([appmenu] = [], state) {
+    if (typeof appmenu !== 'boolean')
+      appmenu = !state.appmenu
+    return { appmenu }
+  }
 }
 
 const reducers = new Reducers()
 
 const default_state = {
+  appmenu: false,
+  devmode: !!localStorage.getItem('store:devmode'),
   user: undefined,
   selected_actively: false,
-  selected: null,
-  users: {},
+  selected: selected_from_hash(),
   multifrogs: {},
   frogs: {},
   sensors: {},
@@ -73,37 +95,13 @@ function rootReducer(state = default_state, action) {
 export const store = createStore(rootReducer)
 
 import { Provider as Provider_ } from 'react-redux'
-
 export const Provider = props => <Provider_ store={store} {...props} />
 
-function selectDebounce(wait = 1): any {
-  return function (target, name, descriptor) {
-    const select = descriptor.value
-    let timeoutId = undefined
-    let prevSelected = undefined
-    let currSelected = undefined
-    const onTimeout = () => {
-      currSelected = prevSelected
-      timeoutId = undefined
-      prevSelected = undefined
-      store.dispatch({ // notify redux as this is happening in a timeout
-        type: 'set',
-        value: store => select(currSelected, store)
-      })
-    }
-    descriptor.value = (selected, store) => {
-      if (prevSelected !== undefined) {
-        currSelected = prevSelected || selected
-        clearTimeout(timeoutId)
-        timeoutId = undefined
-        prevSelected = undefined
-        return select(currSelected, store)
-      }
-      else {
-        prevSelected = selected
-        timeoutId = setTimeout(onTimeout, wait)
-      }
-    }
-    return descriptor
-  }
-}
+window.addEventListener('hashchange', () => {
+  store.dispatch({ type: 'select' })
+})
+
+window.addEventListener('keydown', event => {
+  if (event.code === 'Backquote')
+    store.dispatch({ type: 'devmode' })
+}, true)

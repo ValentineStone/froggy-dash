@@ -15,7 +15,7 @@ import 'firebase/database'
 export const firebaseConfig = {
   apiKey: "AIzaSyCirEa4jJFaPCtneJjShV2V-xpKKIPDQYw",
   authDomain: "froggy-dash.firebaseapp.com",
-  databaseURL: "https://froggy-dash-default-rtdb.europe-west1.firebasedatabase.app",
+  databaseURL: "https://froggy-db.europe-west1.firebasedatabase.app",
   projectId: "froggy-dash",
   storageBucket: "froggy-dash.appspot.com",
   messagingSenderId: "980323684617",
@@ -27,12 +27,31 @@ export const firebaseConfig = {
 firebase.initializeApp(firebaseConfig)
 export const database = firebase.database()
 export const auth = firebase.auth()
-//@ts-ignore
-window.getAuthToken = () => auth.currentUser.getIdToken(/* forceRefresh */ true)
-  .then(console.log)
-  .catch(console.error)
 
 export const logout = () => auth.signOut()
 export const logoutAndReload = () => auth.signOut()
   .then(() => location.reload())
   .catch(() => location.reload())
+
+let loggedIn = false
+const loginCallbacks = []
+export const onLogin = (callback: (_auth: typeof auth) => any) => {
+  if (loggedIn) callback(auth)
+  else loginCallbacks.push(callback)
+}
+auth.onAuthStateChanged(user => {
+  user && user.getIdTokenResult().then(({ claims: { admin } }) => {
+    if (admin && !loggedIn) {
+      loggedIn = true
+      for (const callback of loginCallbacks)
+        callback(auth)
+    }
+  })
+})
+
+export type Snap = _firebase.database.DataSnapshot
+export type Ref = _firebase.database.Reference
+
+import { once } from './utils'
+export const get_value = async (path) => await once(database.ref(path), 'value')
+  .then(v => v.val())

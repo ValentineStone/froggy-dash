@@ -24,7 +24,6 @@ export const _switch = (cases, defaultCase) => value => {
 
 export const log = (...args) => (console.log(...args), args[0])
 
-
 export function dateAdd(date, interval, units) {
   if (!(date instanceof Date))
     return undefined;
@@ -46,127 +45,6 @@ export function dateAdd(date, interval, units) {
 
 export const sleep = ms => new Promise(r => setTimeout(r, ms))
 
-
-
-const importedStyles = new Set()
-
-export function stylize(nameOrUrl, content?) {
-  if (!importedStyles.has(nameOrUrl)) {
-    importedStyles.add(nameOrUrl)
-    const style = document.createElement('style')
-    style.innerHTML = content ? content : `@import url(${nameOrUrl});`
-    document.head.appendChild(style)
-  }
-  else
-    console.warn('attempted styles reimport for', nameOrUrl)
-}
-
-const createdStyles = new Map()
-const createdStylesCounts = new Map()
-export function Stylize({
-  name = undefined,
-  url = undefined,
-  children = null
-}) {
-  useEffect(() => {
-    let styleElement = createdStyles.get(name || url)
-    let count = createdStylesCounts.get(name || url)
-    if (!styleElement) {
-      styleElement = document.createElement('style')
-      styleElement.innerHTML = children ? children : `@import url(${url});`
-      createdStyles.set(name || url, styleElement)
-      createdStylesCounts.set(name || url, 0)
-      count = 0
-    }
-
-    count += 1
-    createdStylesCounts.set(name || url, count)
-    styleElement.dataset.count = count
-
-    if (count === 1)
-      document.head.appendChild(styleElement)
-
-    return () => {
-      const count = createdStylesCounts.get(name || url)
-      createdStylesCounts.set(name || url, count - 1)
-      if (count === 1)
-        document.head.removeChild(styleElement)
-    }
-  }, [name, url, children])
-  return null
-}
-
-const Nothing = () => null
-const Children = ({ children }) => typeof children === 'function' ? children() : children
-export function usePromise(asyncFunction, dependencies = []) {
-  const [state, setState] = useState(() => ({
-    fulfilled: false,
-    rejected: false,
-    settled: false,
-    pending: true,
-    reason: undefined,
-    value: undefined,
-    Loading: (({ pending: Pending = Nothing }) => <Pending />) as any
-  }))
-  useEffect(() => {
-    asyncFunction().then(
-      value => setState(state => ({
-        ...state,
-        value,
-        pending: false,
-        fulfilled: true,
-        settled: true,
-        Loading: Children
-      })),
-      reason => setState(state => ({
-        ...state,
-        reason,
-        pending: false,
-        rejected: true,
-        settled: true,
-        Loading: () => { throw new Error(reason) }
-      }))
-    )
-  }, [...dependencies])
-  return state
-}
-
-
-export const asciify = str => str.replace(/\W/g, '').toLowerCase()
-
-const idCounters = {}
-export function claim_id(name = 'id') {
-  if (!idCounters[name]) idCounters[name] = 0
-  return asciify(name) + '_' + idCounters[name]++
-}
-
-export function parsePromptField(desc) {
-  let name
-  let type
-  let message
-
-  switch (desc[0]) {
-    case '^': type = 'button'; break
-    case '*': type = 'password'; break
-    case '#': type = 'number'; break
-    case '~': type = 'boolean'; break
-    default: type = 'text'
-  }
-
-  if (type !== 'text') desc = desc.slice(1)
-
-  const descPair = desc.split(':')
-  if (descPair.length === 2) {
-    message = descPair[1]
-    name = descPair[0]
-  } else {
-    message = descPair[0]
-    name = asciify(descPair[0])
-  }
-
-  return { name, type, message }
-}
-
 export const unbitmap_k = (value, bitmap) => Object.fromEntries(
   Object.entries(bitmap).filter(v => value & +v[0])
 )
@@ -174,12 +52,12 @@ export const unbitmap_v = (value, bitmap) => Object.fromEntries(
   Object.entries(bitmap).filter(v => value & +v[1])
 )
 
-type GenericFunction = (...args) => any
+export type GenericFunction = (...args) => any
 export const call = <T extends GenericFunction>(fn: T) => fn() as ReturnType<T>
 export const proxy_fn = <T extends GenericFunction>(fn: T) => ((...args) => fn(...args)) as T
 
 import { EventEmitter } from 'events'
-//@ts-ignore
+
 EventEmitter.captureRejections = true
 
 interface TinyEmitter {
@@ -217,24 +95,52 @@ export const unsubs = () => {
   }
 }
 
+export const promise_guts = <T extends any = any>() => {
+  let guts = {} as any
+  const promise = new Promise((resolve, reject) => guts = { resolve, reject })
+  guts.promise = promise
+  return guts as {
+    resolve: (value?: T) => void
+    reject: (reason?: any) => void
+    promise: Promise<T>
+  }
+}
+
+import CancelablePromise from 'cancelable-promise'
+
 export const once = (
   emitter: TinyEmitter,
   event: string,
   check?: (...arg: any) => any,
   transform?: (...arg: any) => any,
-  doCatch = true
 ) => {
-  return new Promise((resolve, reject) => {
-    const listen = (...args) => {
-      if (!check || check(...args)) {
-        if (doCatch) emitter.off('error', reject)
-        resolve(transform ? transform(...args) : args[0])
+  const simple = !check && !transform
+  if (simple) {
+    return new CancelablePromise<any>((resolve, reject, onCancel) => {
+      emitter.once(event, resolve)
+      onCancel(() => {
+        emitter.off(event, resolve)
+        reject()
+      })
+    })
+  }
+  else {
+    return new CancelablePromise<any>((resolve, reject, onCancel) => {
+      const listen = (...args) => {
+        if (!check || check(...args)) {
+          emitter.off('error', reject)
+          resolve(transform ? transform(...args) : args[0])
+        }
+        else emitter.once(event, listen)
       }
-      else emitter.once(event, listen)
-    }
-    emitter.once(event, listen)
-    if (doCatch) emitter.once('error', reject)
-  }) as Promise<any>
+      emitter.once(event, listen)
+      emitter.once('error', reject)
+      onCancel(() => {
+        emitter.off(event, listen)
+        emitter.off('error', reject)
+      })
+    })
+  }
 }
 
 export const assert_one = (value, error) => {
@@ -266,6 +172,7 @@ export const assert = (value, error, ...more) => {
 export const stub = (...args: any) => undefined as any
 export const identity = v => v
 export const refEqual = (a, b) => a === b
+
 export const useMap = (initialItems = [], onAdd?, onRemove?) => {
   const [{ raw, mapped }, setState] = useState(() => ({
     raw: [...initialItems],
@@ -303,8 +210,13 @@ export function repeatRetryUntilTimeout(repeat, until, timeout = Infinity, retry
         reject(e)
       }
     }
-    until().then(resolve).catch(reject)
-    if (timeout !== Infinity) setTimeout(reject, timeout)
+    const untilPromise = until()
+    untilPromise.then(resolve).catch(reject)
+    if (timeout !== Infinity) setTimeout(() => {
+      if (untilPromise.cancel)
+        untilPromise.cancel()
+      reject()
+    }, timeout)
   }).catch(reason => {
     if (reason instanceof Error)
       throw reason
@@ -382,12 +294,12 @@ export const proxy_events = (source: TinyEmitter, dest: TinyEmitter, ...events: 
 
 import { useSelector as _useSelector, shallowEqual, useStore } from 'react-redux'
 
-export function useSelector(selector = identity, comparator = shallowEqual) {
+export function useSelector(selector = identity, comparator: typeof shallowEqual | false = shallowEqual) {
   return _useSelector(selector, comparator || refEqual)
 }
 
 /*
-// Memoized cool useSelector, but its semantics does not allow for prop
+// Memoized cool useSelector, but its semantics do not allow for prop
 // dependant selector logic
 export function useSelector(selector = identity, comparator = shallowEqual) {
   const store = useStore()
@@ -405,27 +317,32 @@ export function useSelector(selector = identity, comparator = shallowEqual) {
 }
 */
 
-export const useLocalStorageState = (item, initalValue = null) => {
+export const useLocalStorageState = (item, initalValue = null, initialize = false) => {
   const [value, _setValue] = useState(() => {
     let value = localStorage.getItem(item)
-    if (value === null) {
+    value = value ? JSON.parse(value) : undefined
+    if (value === undefined) {
       value = typeof initalValue === 'function' ? initalValue() : initalValue
-      if (value !== null)
-        localStorage.setItem(item, value)
+      if (initialize && value !== undefined)
+        localStorage.setItem(item, JSON.stringify(value))
     }
-    return value === null ? null : String(value)
+    return value
   })
   const setValue = useCallback(value => {
-    if (value === null) {
-      localStorage.removeItem(item)
-      _setValue(null)
-    }
-    else {
-      localStorage.setItem(item, value)
-      _setValue(String(value))
-    }
+    _setValue(prevValue => {
+      if (typeof value === 'function') value = value(prevValue)
+      if (value === undefined)
+        localStorage.removeItem(item)
+      else
+        localStorage.setItem(item, JSON.stringify(value))
+      return value
+    })
   }, [])
   return [value, setValue] as [any, typeof setValue]
+}
+
+export const useToggle = ([value, set]) => {
+  return [value, useCallback(() => set(v => !v), [])]
 }
 
 export function useDispatch(_dispatchers = [], memo?): any {
@@ -444,39 +361,18 @@ export function useRedux(selector = identity, comparator = shallowEqual) {
   return [useSelector(selector, comparator), useDispatch()]
 }
 
-export const throttledTimeout = (func?: GenericFunction, ms?: number) => {
-  let id = null
-  return (_func?: GenericFunction, _ms?: number) => {
-    clearTimeout(id)
-    const local_id = setTimeout(
-      _func || func,
-      typeof _ms === 'number' ? _ms : ms
-    )
-    id = local_id
-    return () => clearTimeout(local_id)
-  }
-}
-export const throttledInterval = (func?: GenericFunction, ms?: number) => {
-  let id = null
-  return (_func?: GenericFunction, _ms?: number) => {
-    clearInterval(id)
-    const local_id = setInterval(
-      _func || func,
-      typeof _ms === 'number' ? _ms : ms
-    )
-    id = local_id
-    return () => clearInterval(local_id)
-  }
+export const interval = (fn: GenericFunction, ms: number, immediate = false) => {
+  if (immediate) fn()
+  const id = setInterval(fn, ms)
+  return () => clearInterval(id)
 }
 
-export const effect = effect => {
-  let uneffect = null
-  return () => {
-    if (uneffect) {
-      uneffect()
-      uneffect = null
-    } else {
-      uneffect = effect() || identity
-    }
-  }
+export const timeout = (fn: GenericFunction, ms: number) => {
+  const id = setTimeout(fn, ms)
+  return () => clearTimeout(id)
+}
+
+export const immediate = (fn: GenericFunction, ms: number) => {
+  const id = setImmediate(fn, ms)
+  return () => clearImmediate(id)
 }

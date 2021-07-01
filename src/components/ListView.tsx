@@ -8,7 +8,7 @@ import Collapse from '@material-ui/core/Collapse'
 import ExpandLess from '@material-ui/icons/ExpandLess'
 import ExpandMore from '@material-ui/icons/ExpandMore'
 
-const ListView = ({ items, collapsable = false, onClick = undefined }) => {
+const ListView = ({ items, collapsable = false, onClick = undefined, href = undefined }) => {
   const [open, setOpen] = useState(true)
   const toggle = useCallback(() => setOpen(open => !open), [])
 
@@ -18,9 +18,10 @@ const ListView = ({ items, collapsable = false, onClick = undefined }) => {
       collapsable={item[0].label}
       items={item.slice(1)}
       onClick={item[0].onClick}
+      href={item[0].href}
     />
   ) : (
-    <ListItem button key={item.id} onClick={item.onClick}>
+    <ListItem button key={item.id} onClick={item.onClick} component="a" href={item.href}>
       {/*<ListItemIcon><SendIcon /></ListItemIcon>*/}
       <ListItemText primary={item.label} />
     </ListItem>
@@ -32,9 +33,9 @@ const ListView = ({ items, collapsable = false, onClick = undefined }) => {
     </List>
   ) : (
     <>
-      <ListItem button onClick={onClick}>
+      <ListItem button onClick={onClick} component="a" href={href}>
         <ListItemText primary={collapsable} />
-        {open ? <ExpandLess  onClick={toggle} /> : <ExpandMore onClick={toggle} />}
+        {open ? <ExpandLess onClick={toggle} /> : <ExpandMore onClick={toggle} />}
       </ListItem>
       <Collapse in={open} timeout="auto" style={{ paddingLeft: '1em' }}>
         <List>

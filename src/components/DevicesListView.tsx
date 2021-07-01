@@ -11,28 +11,32 @@ const frogsSelector = store => [
 export const DevicesListView = () => {
   const [multifrogs, frogs, sensors] = useSelector(frogsSelector)
   const [items, setItems] = useState([])
-  const dispatch = useDispatch()
+  const [showAppmenu] = useDispatch([d => () => d('appmenu', [true])], [])
   useEffect(() => {
-    const $ = (label, ...rest) => ({
-      label,
-      id: label,
-      onClick: () =>
-        dispatch('set', {
-          selected: {
-            multifrog: rest[0],
-            frog: rest[1],
-            sensor: rest[2],
-            presentation: rest[3],
-            something: rest[0] || rest[1] || rest[2] || rest[3]
-          }
-        })
-    })
+    const $ = (label, ...rest) => {
+      const href = '#/' + (
+        rest[0]
+          ? (rest[1]
+            ? (rest[2]
+              ? `sensor/${rest[0]}/${rest[1]}/${rest[2]}`
+              : `frog/${rest[0]}/${rest[1]}`)
+            : `multifrog/${rest[0]}`)
+          : rest[3]
+      )
+      return {
+        href,
+        label,
+        id: label,
+        onClick: () => { },
+      }
+    }
     setItems(() => {
       const multifrog_ids = Object.keys(multifrogs).sort()
       return [
+        { label: 'Меню', id: 'Меню', onClick: showAppmenu },
         $('Комнаты', null, null, null, 'rooms'),
         [
-          $('Лягушки', null, null, null, 'frogs'),
+          $('Лягушки', null, null, null, 'froggy'),
           ...multifrog_ids.map((id1, index1) => {
             const frog_ids = Object.keys(multifrogs[id1]?.frogs || {}).sort()
             return [
@@ -49,7 +53,7 @@ export const DevicesListView = () => {
             ]
           })
 
-        ]
+        ],
       ]
     })
   }, [multifrogs, frogs])

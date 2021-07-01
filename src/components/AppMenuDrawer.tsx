@@ -1,40 +1,21 @@
-import styled from 'styled-components'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import Drawer from './Drawer'
 
-/*
-import { FontAwesomeIcon as FontAwesomeIconBase } from '@fortawesome/react-fontawesome'
-const FontAwesomeIcon = memo(FontAwesomeIconBase)
-import { faBars } from '@fortawesome/free-solid-svg-icons'
-*/
-const MenuIcon = () => <h2><a href="#">Menu</a></h2>
-
-const DrawerButton = styled.button`
-  position: fixed;
-  background: transparent;
-  right: 1rem;
-  top: 1rem;
-  border: none;
-  z-index: 13;
-`
-
 import AppMenu from './AppMenu'
+import { useDispatch, useSelector } from '../utils'
 
+const appmenuSelector = state => state.appmenu
 export default function AppMenuDrawer() {
-  const [open, setOpen] = useState(false)
-  const toggleDrawer = useCallback(event => setOpen(s => !s), [])
+  const open = useSelector(appmenuSelector)
+  const [toggle] = useDispatch([d => v => d('appmenu', [v])], [])
   useEffect(() => {
-    if (!open) return
-    const handleKeydown = event => event.code === 'Escape' && setOpen(false)
+    const handleKeydown = event => event.code === 'Escape' && toggle(false)
     window.addEventListener("keydown", handleKeydown, true)
     return () => window.removeEventListener("keydown", handleKeydown)
-  }, [open])
-  return <>
-    <DrawerButton onClick={toggleDrawer}>
-      <MenuIcon />
-    </DrawerButton>
-    <Drawer left size={250} open={open} zIndex={14} onClose={toggleDrawer}>
+  }, [])
+  return (
+    <Drawer left size={250} open={open} zIndex={14} onClose={toggle}>
       <AppMenu />
     </Drawer>
-  </>
+  )
 }

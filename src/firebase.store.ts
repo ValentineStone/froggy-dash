@@ -1,12 +1,6 @@
-import type EventEmitter from 'events'
-import { database, firebase } from './firebase'
+import { database, firebase, onLogin, get_value, Ref } from './firebase'
 import { store } from './store'
-import { throttledTimeout, log, once, unsubs, subscribe, effect } from './utils'
-
-const online_timeout = 15000
-const till_offline = online_at => online_timeout - since_online(online_at)
-const since_online = online_at => Date.now() - online_at
-const is_online = online_at => since_online(online_at) < online_timeout
+import { once, subscribe, unsubs } from './utils'
 
 const attachModel = (type, uuid, children?, ...restChildren) => {
   const childTypes = children ? children.split(',') : []
@@ -36,19 +30,29 @@ const attachModel = (type, uuid, children?, ...restChildren) => {
   return unsub()
 }
 
-let subscribed = false
-firebase.auth().onAuthStateChanged(user => {
-  user && user.getIdTokenResult().then(({ claims: { admin } }) => {
-    if (admin && !subscribed) {
-      subscribed = true
-      attachModel('users', user.uid, 'multifrogs', 'frogs', 'sensors,readings:sensors')
-      /*
-      const db_ref = database.ref(`/`)
-      db_ref.on('value', onDbValue)
-      window.addEventListener(
-        'beforeunload',
-        () => db_ref.off('value', onDbValue))
-      */
-    }
+const attach = (type, uuid, transform = (v: Ref) => v as any) => subscribe(
+  transform(database.ref(`/${type}/${uuid}`)),
+  'value',
+  v => store.dispatch({
+    type: 'set',
+    value: [type, state => ({ ...state, [uuid]: v.val() })]
   })
+)
+
+onLogin(async auth => {
+  const unsub = unsubs()
+  const uid = auth.currentUser.uid
+  const multifrogs = await get_value(`/users/${uid}/multifrogs`)
+  for (const multifrog in multifrogs) {
+    unsub(attach('multifrogs', multifrog))
+    const frogs = multifrogs[multifrog]
+    for (const frog in frogs) {
+      unsub(attach('frogs', frog))
+      const sensors = frogs[frog]
+      for (const sensor in sensors) {
+        unsub(attach('sensors', sensor))
+        unsub(attach('readings', sensor, d => d.limitToLast(30)))
+      }
+    }
+  }
 })
