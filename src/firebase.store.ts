@@ -39,20 +39,41 @@ const attach = (type, uuid, transform = (v: Ref) => v as any) => subscribe(
   })
 )
 
+const attachUser = (uid, callback) => {
+  let uncallback
+  const unsub = subscribe(
+    database.ref(`/users/${uid}`), 'value', v => {
+      const dbuser = v.val()
+      store.dispatch({
+        type: 'set',
+        value: ['dbuser', v.val()]
+      })
+      uncallback?.()
+      uncallback = callback(dbuser)
+    }
+  )
+  return () => {
+    uncallback?.()
+    unsub()
+  }
+}
+
 onLogin(async auth => {
-  const unsub = unsubs()
   const uid = auth.currentUser.uid
-  const multifrogs = await get_value(`/users/${uid}/multifrogs`)
-  for (const multifrog in multifrogs) {
-    unsub(attach('multifrogs', multifrog))
-    const frogs = multifrogs[multifrog]
-    for (const frog in frogs) {
-      unsub(attach('frogs', frog))
-      const sensors = frogs[frog]
-      for (const sensor in sensors) {
-        unsub(attach('sensors', sensor))
-        unsub(attach('readings', sensor, d => d.limitToLast(30)))
+  return attachUser(uid, ({ multifrogs }) => {
+    const unsub = unsubs()
+    for (const multifrog in multifrogs) {
+      unsub(attach('multifrogs', multifrog))
+      const frogs = multifrogs[multifrog]
+      for (const frog in frogs) {
+        unsub(attach('frogs', frog))
+        const sensors = frogs[frog]
+        for (const sensor in sensors) {
+          unsub(attach('sensors', sensor))
+          unsub(attach('readings', sensor, d => d.limitToLast(30)))
+        }
       }
     }
-  }
+    return unsub()
+  })
 })

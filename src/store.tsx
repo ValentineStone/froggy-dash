@@ -77,6 +77,7 @@ const default_state = {
   appmenu: false,
   devmode: !!localStorage.getItem('store:devmode'),
   user: undefined,
+  dbuser: {},
   selected_actively: false,
   selected: selected_from_hash(),
   multifrogs: {},

@@ -39,15 +39,16 @@ UserIcon = memo(UserIcon)
 import { firebase, logoutAndReload } from '../firebase'
 import { useSelector } from '../utils'
 
-const selectUser = store => store.user
+const selectUser = store => [store.user, store.dbuser, store.devmode]
 
 function AppMenu() {
-  const user = useSelector(selectUser)
+  const [user, dbuser, devmode] = useSelector(selectUser)
+  console.log(dbuser)
   return (
     <MenuRoot className="expands">
       <UserIcon />
-      <MenuText>{user?.displayName}</MenuText>
-      <MenuText size={8}>{user?.uid}</MenuText>
+      <MenuText>{dbuser.name || user?.displayName}</MenuText>
+      {devmode && <MenuText size={8}>{user?.uid}</MenuText>}
       <MenuButton onClick={logoutAndReload}>
         Log out
       </MenuButton>
