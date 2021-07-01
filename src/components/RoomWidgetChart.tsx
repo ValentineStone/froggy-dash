@@ -2,7 +2,7 @@ import { memo } from 'react'
 import { useSelector } from '../utils'
 import Chart from './Chart'
 
-const options = (data, labels, line, aspectRatio = 3 / 4) => ({
+const options = (data, labels, line, aspectRatio = 3 / 4, valueSeriesName) => ({
   type: 'line',
   options: {
     aspectRatio,
@@ -35,7 +35,7 @@ const options = (data, labels, line, aspectRatio = 3 / 4) => ({
     labels,
     datasets: [
       {
-        label: 'Temperature',
+        label: valueSeriesName,
         fill: false,
         lineTension: 0,
         data,
@@ -64,7 +64,7 @@ const formatDate = v => new Date(+v).toLocaleString('ru-RU', {
 const devmodeSelector = store => store.devmode
 const RoomWidgetChart = ({ uuid, sensor, readings, aspectRatio = undefined }) => {
   const devmode = useSelector(devmodeSelector)
-  const { readingCritical } = sensor.meta
+  const { readingCritical, valueSeriesName } = sensor.meta
   const keys = Object.keys(readings).slice(-30);
   const values = Object.values(readings).slice(-30);
   const critical = values[values.length - 1] >= readingCritical
@@ -74,6 +74,7 @@ const RoomWidgetChart = ({ uuid, sensor, readings, aspectRatio = undefined }) =>
     labels,
     readingCritical,
     aspectRatio,
+    valueSeriesName
   )
   return <>
     <Chart chartjs={chartjs} style={{

@@ -3,6 +3,7 @@ import { firebaseConfig } from '../firebase'
 import RoomWidgetChart from './RoomWidgetChart'
 import RoomWidget from './RoomWidget'
 import MetaEditorWidget from './MetaEditorWidget'
+import ReadingsEditorWidget from './ReadingsEditorWidget'
 import ValueEditorWidget from './ValueEditorWidget'
 import styled from 'styled-components'
 
@@ -33,12 +34,15 @@ export const PresentationFrog = ({ frog, uuid }) => {
   </>
 }
 
-const readingsSelector = uuid => store => store.readings[uuid]
+const readingsSelector = uuid => store => [store.readings[uuid], store.devmode]
 export const PresentationSensor = ({ uuid, sensor }) => {
-  const readings = useSelector(readingsSelector(uuid))
+  const [readings, devmode] = useSelector(readingsSelector(uuid))
   return (
     <>
       <MetaEditorWidget path={`/sensors/${uuid}`} />
+      {!!readings && devmode && 
+        <ReadingsEditorWidget uuid={uuid} />
+      }
       {!!readings &&
         <div
           style={{
