@@ -2,6 +2,8 @@ import { TextField } from '@material-ui/core'
 import styled from 'styled-components'
 import { useEffect, useRef, useState } from 'react'
 import { database } from '../firebase'
+import Card from '@material-ui/core/Card'
+import CardContent from '@material-ui/core/CardContent'
 
 const format = str =>
   str.split('').map((letter, index) =>
@@ -35,13 +37,17 @@ export default function ValueEditorWidget({ path, name = undefined, multiline = 
     database.ref(path).set(value)
   }
   return value !== undefined && (
-    <TextField
-      multiline={multiline}
-      fullWidth={multiline}
-      margin="none"
-      label={name}
-      value={value}
-      onChange={onChange}
-    />
+    <Card>
+      <CardContent>
+        <TextField
+          multiline={multiline}
+          fullWidth={multiline}
+          margin="none"
+          label={name}
+          value={value}
+          onChange={onChange}
+        />
+      </CardContent>
+    </Card>
   )
 }

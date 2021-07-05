@@ -80,13 +80,17 @@ export const PresentationSomething = ({ selected }) => {
 
 export const PresentationRooms = () => {
   return (
-    <ReadingsWidget />
+    <PresentationItems>
+      <ReadingsWidget />
+    </PresentationItems>
   )
 }
 
 export const PresentationFroggy = () => {
   return (
-    <ReadingsWidget />
+    <PresentationItems>
+      <ReadingsWidget />
+    </PresentationItems>
   )
 }
 

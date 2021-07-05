@@ -3,7 +3,10 @@ import styled from 'styled-components'
 import { useEffect, useRef, useState } from 'react'
 import { database } from '../firebase'
 
-const MetaEditorWidgetRoot = styled.div`
+import Card from '@material-ui/core/Card'
+import CardContentBase from '@material-ui/core/CardContent'
+
+const CardContent = styled(CardContentBase)`
   & > * {
     margin-right: 1em !important;
     margin-bottom: 1em !important;
@@ -43,21 +46,23 @@ export default function MetaEditorWidget({ path }) {
       value = String(value).startsWith('t') ? true : false
     database.ref(path + '/meta').update({ [key]: value })
   }
-  return <MetaEditorWidgetRoot>
-    <TextField
-      margin="none"
-      label="Name"
-      value={name}
-      onChange={onChange('name', 'string')}
-    />
-    {Object.entries(state).map(([key, value]) =>
+  return <Card>
+    <CardContent>
       <TextField
-        key={key}
         margin="none"
-        label={format(key)}
-        value={value}
-        onChange={onChange(key, typeof value)}
+        label="Name"
+        value={name}
+        onChange={onChange('name', 'string')}
       />
-    )}
-  </MetaEditorWidgetRoot>
+      {Object.entries(state).map(([key, value]) =>
+        <TextField
+          key={key}
+          margin="none"
+          label={format(key)}
+          value={value}
+          onChange={onChange(key, typeof value)}
+        />
+      )}
+    </CardContent>
+  </Card>
 }
