@@ -1,63 +1,109 @@
-import { useState, useEffect } from 'react'
-import { useSelector, useDispatch, log } from '../utils'
+import { useCallback, useState } from 'react'
+import { useSelector, useDispatch, useLocalStorageState, useToggle } from '../utils'
+import styled from 'styled-components'
+import List from '@material-ui/core/List'
+import ListItem from '@material-ui/core/ListItem'
+import ListItemText from '@material-ui/core/ListItemText'
+import Collapse from '@material-ui/core/Collapse'
+import ExpandLess from '@material-ui/icons/ExpandLess'
+import ExpandMore from '@material-ui/icons/ExpandMore'
+import Save from '@material-ui/icons/Save'
+import { database } from '../firebase'
 
-import ListView from './ListView'
+const Flex = styled.div`
+  display: flex;
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-basis: auto;
+  & > * { flex: 1 }
+`
+
+const ItemSingle = ({ label, children = null, renames = null, ...rest }: any) => {
+  const [renaming, toggleRenaming] = useToggle(useState(false))
+  const onDoubleClick = useCallback(() => renames && toggleRenaming(), [renames])
+  const onChange = useCallback(event => renames && database.ref(renames + '/name').set(event.target.value), [renames])
+  const onKeyDown = useCallback(event => renames && event.key === 'Enter' && toggleRenaming(), [renames])
+  return (
+    <ListItem onDoubleClick={onDoubleClick} {...rest} button component="a">
+      {renaming
+        ? <ListItemText><input value={label} onChange={onChange} onKeyDown={onKeyDown} /></ListItemText>
+        : <ListItemText primary={label} />
+      }
+      {renaming ? <Save onClick={toggleRenaming} /> : children}
+    </ListItem>
+  )
+}
+
+const ItemCollapsable = ({ label, children, ...rest }: any) => {
+  const [open, setOpen] = useLocalStorageState(label, true)
+  const toggle = useCallback(() => setOpen(open => !open), [])
+  return <>
+    <ItemSingle {...rest} label={label}>
+      {open
+        ? <ExpandLess onClick={toggle} />
+        : <ExpandMore onClick={toggle} />
+      }
+    </ItemSingle>
+    <Collapse in={open} timeout="auto" style={{ paddingLeft: '1em' }}>
+      <List>
+        {children}
+      </List>
+    </Collapse>
+  </>
+}
+
+const Item = ({ children = null, ...rest }: any) => {
+  if (children)
+    return <ItemCollapsable {...rest} children={children} />
+  else
+    return <ItemSingle {...rest} />
+}
+
+const fakename = (type, uuid) => type + ' ' + uuid.slice(0, 7)
+const map = (Items, slice, cb) =>
+  Object.keys(slice || Items)
+    .map(key => Items[key] ? cb(key, Items[key]) : null)
 
 const frogsSelector = store => [
   store.multifrogs,
   store.frogs,
-  //store.sensors,
+  store.sensors,
 ]
 export const DevicesListView = () => {
   const [multifrogs, frogs, sensors] = useSelector(frogsSelector)
-  const [items, setItems] = useState([])
-  const [showAppmenu] = useDispatch([d => () => d('appmenu', [true])], [])
-  useEffect(() => {
-    const $ = (label, ...rest) => {
-      const href = '#/' + (
-        rest[0]
-          ? (rest[1]
-            ? (rest[2]
-              ? `sensor/${rest[0]}/${rest[1]}/${rest[2]}`
-              : `frog/${rest[0]}/${rest[1]}`)
-            : `multifrog/${rest[0]}`)
-          : rest[3]
-      )
-      return {
-        href,
-        label,
-        id: label,
-        onClick: () => { },
-      }
-    }
-    setItems(() => {
-      const multifrog_ids = Object.keys(multifrogs).sort()
-      return [
-        { label: 'Меню', id: 'Меню', onClick: showAppmenu },
-        $('Комнаты', null, null, null, 'rooms'),
-        [
-          $('Лягушки', null, null, null, 'froggy'),
-          ...multifrog_ids.map((id1, index1) => {
-            const frog_ids = Object.keys(multifrogs[id1]?.frogs || {}).sort()
-            return [
-              $(`Мульти ${index1 + 1}`, id1),
-              ...frog_ids.map((id2, index2) => {
-                const sensor_ids = Object.keys(frogs[id2]?.sensors || {}).sort()
-                return [
-                  $(`Лягушка ${index1 + 1}.${index2 + 1}`, id1, id2),
-                  ...sensor_ids.map((id3, index3) => {
-                    return $(`Сенсор ${index1 + 1}.${index2 + 1}.${index3 + 1}`, id1, id2, id3)
-                  })
-                ]
-              })
-            ]
-          })
-
-        ],
-      ]
-    })
-  }, [multifrogs, frogs])
+  const [toggleAppmenu] = useDispatch([d => () => d('appmenu', [true])], [])
   return (
-    <ListView items={items} />
+    <List>
+      <Item label="Menu" onClick={toggleAppmenu} />
+      <Item label="Rooms" href="#/rooms" />
+      <Item label="Frogs" href="#/froggy" >
+        {map(multifrogs, null, (mId, m) =>
+          <Item
+            key={mId}
+            renames={`/multifrogs/${mId}`}
+            label={m.name || fakename('Multifrog', mId)}
+            href={`#/multifrog/${mId}`}
+          >
+            {map(frogs, m.frogs, (fId, f) =>
+              <Item
+                key={fId}
+                renames={`/frogs/${fId}`}
+                label={f.name || fakename('Frog', fId)}
+                href={`#/frog/${mId}/${fId}`}
+              >
+                {map(sensors, f.sensors, (sId, s) =>
+                  <Item
+                    key={sId}
+                    renames={`/sensors/${sId}`}
+                    label={s.name || fakename('Sensor', sId)}
+                    href={`#/sensor/${mId}/${fId}/${sId}`}
+                  />
+                )}
+              </Item>
+            )}
+          </Item>
+        )}
+      </Item>
+    </List>
   )
 }

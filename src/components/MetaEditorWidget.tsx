@@ -5,7 +5,8 @@ import { database } from '../firebase'
 
 const MetaEditorWidgetRoot = styled.div`
   & > * {
-    margin: 1em !important;
+    margin-right: 1em !important;
+    margin-bottom: 1em !important;
   }
 `
 const format = str =>
@@ -17,14 +18,25 @@ const format = str =>
 
 export default function MetaEditorWidget({ path }) {
   const [state, setState] = useState({})
+  const [name, setName] = useState('')
   useEffect(() => {
     const metaRef = database.ref(path + '/meta')
-    const onValue = s => setState(s.val())
+    const onValue = s => setState(s.val() || {})
     metaRef.on('value', onValue)
     return () => metaRef.off('value', onValue)
   }, [path])
+  useEffect(() => {
+    const nameRef = database.ref(path + '/name')
+    const onName = s => setName(s.val() || '')
+    nameRef.on('value', onName)
+    return () => nameRef.off('value', onName)
+  }, [path])
   const onChange = (key, type) => event => {
     let value = event.target.value
+    if (key === 'name') {
+      database.ref(path + '/name').set(value)
+      return
+    }
     if (type === 'number')
       value = +value
     else if (type === 'boolean')
@@ -32,6 +44,12 @@ export default function MetaEditorWidget({ path }) {
     database.ref(path + '/meta').update({ [key]: value })
   }
   return <MetaEditorWidgetRoot>
+    <TextField
+      margin="none"
+      label="Name"
+      value={name}
+      onChange={onChange('name', 'string')}
+    />
     {Object.entries(state).map(([key, value]) =>
       <TextField
         key={key}

@@ -1,7 +1,7 @@
 import { TextField } from '@material-ui/core'
+import styled from 'styled-components'
 import { useEffect, useRef, useState } from 'react'
 import { database } from '../firebase'
-import { log } from '../utils'
 
 const format = str =>
   str.split('').map((letter, index) =>

@@ -70,13 +70,14 @@ html {
 .lightgray { background: lightgray }
 .pale { background: #fffe }
 
-.right-panel {
+.panel-slim {
   box-shadow: 0 0 8px #0000001e;
   overflow-x: hidden;
+  padding: 0.5em;
 }
 
-.app-view-root > * {
-  padding: 1em;
+.panel-wide {
+  padding: 1em 2em;
   overflow: auto;
 }
 `
@@ -97,7 +98,7 @@ export default function App() {
       <CssGlobals />
       <AuthShield>
         <AppMenuDrawer />
-        <SplitView left size={350} classNameRoot="expands app-view-root" classNameSlim="right-panel">
+        <SplitView left size={350} classNameRoot="expands" classNameSlim="panel-slim" classNameWide="panel-wide">
           <DevicesListView />
           <PresentationView />
         </SplitView>

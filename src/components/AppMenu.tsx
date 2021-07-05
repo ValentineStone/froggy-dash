@@ -43,7 +43,6 @@ const selectUser = store => [store.user, store.dbuser, store.devmode]
 
 function AppMenu() {
   const [user, dbuser, devmode] = useSelector(selectUser)
-  console.log(dbuser)
   return (
     <MenuRoot className="expands">
       <UserIcon />

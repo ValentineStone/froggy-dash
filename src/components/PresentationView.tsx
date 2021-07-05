@@ -1,65 +1,61 @@
-import { useSelector } from '../utils'
+import { useSelector, log } from '../utils'
 import { firebaseConfig } from '../firebase'
-import RoomWidgetChart from './RoomWidgetChart'
-import RoomWidget from './RoomWidget'
+import ReadingsWidgetChart from './ReadingsWidgetChart'
+import ReadingsWidget from './ReadingsWidget'
 import MetaEditorWidget from './MetaEditorWidget'
 import ReadingsEditorWidget from './ReadingsEditorWidget'
 import ValueEditorWidget from './ValueEditorWidget'
 import styled from 'styled-components'
 
+const PresentationViewRoot = styled.h3`padding: 1em;`
 const Subheading = styled.h3`margin-bottom: 0.6rem;`
 const Section = styled.section`
   margin: 1rem 0;
   padding: 1rem;
   border: 1px solid lightgray;
 `
+const PresentationItems = styled.section`& > * { margin-bottom: 1em; }`
 
 import { ObjectInspector } from 'react-inspector'
 
-const uidSelector = store => store.user.uid
+const multifrogSelector = store => [store.user.uid, store.dbuser]
+
 export const PresentationMultifrog = ({ multifrog, uuid }) => {
-  const uid = useSelector(uidSelector)
-  return <>
+  const [uid, dbuser] = useSelector(multifrogSelector)
+  const sensors = []
+  if (dbuser.multifrogs)
+    for (const multi in dbuser.multifrogs)
+      for (const frog in dbuser.multifrogs[multi])
+        sensors.push(...Object.keys(dbuser.multifrogs[multi][frog]))
+  return <PresentationItems>
+    <MetaEditorWidget path={`/multifrogs/${uuid}`} />
     <ValueEditorWidget
       multiline
       name="Hardware"
       path={`/users/${uid}/hardware/${uuid}`}
       initial={multifrog.hardware}
     />
-  </>
+    <ReadingsWidget sensors={sensors} key={uuid} />
+  </PresentationItems>
 }
 
 export const PresentationFrog = ({ frog, uuid }) => {
-  return <>
-  </>
+  return <PresentationItems>
+    <MetaEditorWidget path={`/frogs/${uuid}`} />
+    <ReadingsWidget sensors={frog.sensors} key={uuid} />
+  </PresentationItems>
 }
 
-const readingsSelector = uuid => store => [store.readings[uuid], store.devmode]
+const devmodeSelector = store => store.devmode
+
 export const PresentationSensor = ({ uuid, sensor }) => {
-  const [readings, devmode] = useSelector(readingsSelector(uuid))
+  const devmode = useSelector(devmodeSelector)
   return (
-    <>
+    <PresentationItems>
       <MetaEditorWidget path={`/sensors/${uuid}`} />
-      {!!readings && devmode && 
-        <ReadingsEditorWidget uuid={uuid} />
-      }
-      {!!readings &&
-        <div
-          style={{
-            padding: '1em',
-            maxWidth: 600,
-          }}
-        >
-          <RoomWidgetChart
-            key={uuid}
-            uuid={uuid}
-            aspectRatio={1}
-            sensor={sensor}
-            readings={readings}
-          />
-        </div>
-      }
-    </>
+      {devmode && <ReadingsEditorWidget uuid={uuid} />}
+      <ReadingsWidget sensor={uuid} key={uuid} />
+    </PresentationItems>
   )
 }
 
@@ -84,13 +80,13 @@ export const PresentationSomething = ({ selected }) => {
 
 export const PresentationRooms = () => {
   return (
-    <RoomWidget />
+    <ReadingsWidget />
   )
 }
 
 export const PresentationFroggy = () => {
   return (
-    <PresentationRooms />
+    <ReadingsWidget />
   )
 }
 

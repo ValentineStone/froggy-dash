@@ -70,7 +70,7 @@ onLogin(async auth => {
         const sensors = frogs[frog]
         for (const sensor in sensors) {
           unsub(attach('sensors', sensor))
-          unsub(attach('readings', sensor, d => d.limitToLast(30)))
+          //unsub(attach('readings', sensor, d => d.limitToLast(30)))
         }
       }
     }
