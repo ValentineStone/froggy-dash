@@ -11,6 +11,7 @@ import {
   DateTimePicker,
   MuiPickersUtilsProvider,
 } from '@material-ui/pickers'
+import { memo } from 'react'
 
 const years = n => n * 365 * 30 * 24 * 60 * 60 * 1000
 const months = n => n * 30 * 24 * 60 * 60 * 1000
@@ -28,6 +29,7 @@ const sinceDate = since => new Date(since).toLocaleString('ru-RU', {
   second: '2-digit',
 })
 const timeframes = [
+  [String(hours(1)), 'Hour'],
   [String(days(1)), 'Day'],
   [String(days(7)), 'Week'],
   [String(months(1)), 'Month'],
@@ -39,7 +41,7 @@ const timeframes = [
 ]
 const standartTimeframe = tf => timeframes.find(v => v[0] === tf)
 
-const SinceSelector = ({ onSelected = null, keep = undefined }) => {
+const SinceSelector = memo<any>(({ onSelected = null, keep = undefined }) => {
   const [timeframe, setTimeframe] = useLocalStorageState('SinceSelector:timeframe:' + keep, String(days(1)))
   const [custom, setCustom] = useLocalStorageState('SinceSelector:custom:' + keep, false)
   const [since, setSince] = useLocalStorageState('SinceSelector:since:' + keep, sinceStr(days(1)))
@@ -87,6 +89,6 @@ const SinceSelector = ({ onSelected = null, keep = undefined }) => {
       value={sinceDate(+currentsince)}
     />
   </>
-}
+})
 
 export default SinceSelector

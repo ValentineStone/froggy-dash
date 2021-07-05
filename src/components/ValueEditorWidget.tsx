@@ -1,7 +1,7 @@
-import { TextField } from '@material-ui/core'
 import styled from 'styled-components'
 import { useEffect, useRef, useState } from 'react'
 import { database } from '../firebase'
+import TextField from '@material-ui/core/TextField'
 import Card from '@material-ui/core/Card'
 import CardContent from '@material-ui/core/CardContent'
 

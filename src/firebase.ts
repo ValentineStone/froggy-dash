@@ -51,7 +51,3 @@ auth.onAuthStateChanged(user => {
 
 export type Snap = _firebase.database.DataSnapshot
 export type Ref = _firebase.database.Reference
-
-import { once } from './utils'
-export const get_value = async (path) => await once(database.ref(path), 'value')
-  .then(v => v.val())

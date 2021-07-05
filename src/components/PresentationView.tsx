@@ -1,13 +1,13 @@
 import { useSelector, log } from '../utils'
 import { firebaseConfig } from '../firebase'
-import ReadingsWidgetChart from './ReadingsWidgetChart'
 import ReadingsWidget from './ReadingsWidget'
 import MetaEditorWidget from './MetaEditorWidget'
 import ReadingsEditorWidget from './ReadingsEditorWidget'
-import ValueEditorWidget from './ValueEditorWidget'
+import HardwareConfigEditorWidget from './HardwareConfigEditorWidget'
+import RoomsWidget from './RoomsWidget'
 import styled from 'styled-components'
 
-const PresentationViewRoot = styled.h3`padding: 1em;`
+const PresentationViewRoot = styled.div`padding: 1em;`
 const Subheading = styled.h3`margin-bottom: 0.6rem;`
 const Section = styled.section`
   margin: 1rem 0;
@@ -29,12 +29,7 @@ export const PresentationMultifrog = ({ multifrog, uuid }) => {
         sensors.push(...Object.keys(dbuser.multifrogs[multi][frog]))
   return <PresentationItems>
     <MetaEditorWidget path={`/multifrogs/${uuid}`} />
-    <ValueEditorWidget
-      multiline
-      name="Hardware"
-      path={`/users/${uid}/hardware/${uuid}`}
-      initial={multifrog.hardware}
-    />
+    <HardwareConfigEditorWidget uid={uid} uuid={uuid} />
     <ReadingsWidget sensors={sensors} key={uuid} />
   </PresentationItems>
 }
@@ -81,7 +76,7 @@ export const PresentationSomething = ({ selected }) => {
 export const PresentationRooms = () => {
   return (
     <PresentationItems>
-      <ReadingsWidget />
+      <RoomsWidget />
     </PresentationItems>
   )
 }

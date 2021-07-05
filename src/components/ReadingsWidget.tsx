@@ -3,6 +3,7 @@ import { useSelector, log } from '../utils'
 import ReadingsWidgetChart from './ReadingsWidgetChart'
 import SinceSelector from './SinceSelector'
 import ExportWidget from './ExportWidget'
+import HardResetWidget from './HardResetWidget'
 import { useState } from 'react'
 import Card from '@material-ui/core/Card'
 import CardContent from '@material-ui/core/CardContent'
@@ -32,8 +33,7 @@ const sensorSelector = store => [store.sensors]
 
 const ReadingsWidget = ({ sensors = null, sensor = null }) => {
   const [allSensors] = useSelector(sensorSelector)
-  const [since, setSince] = useState(String(Date.now()))
-  const [sexportSince, setExportSince] = useState(String(Date.now()))
+  const [since, setSince] = useState(undefined)
   const picked = sensors
     ? (Array.isArray(sensors)
       ? sensors
@@ -63,6 +63,7 @@ const ReadingsWidget = ({ sensors = null, sensor = null }) => {
         </CardContent>
       </Card>
       <ExportWidget sensors={picked} />
+      <HardResetWidget sensors={picked} />
     </>
   )
 }

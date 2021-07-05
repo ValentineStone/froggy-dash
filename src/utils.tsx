@@ -376,3 +376,11 @@ export const immediate = (fn: GenericFunction, ms: number) => {
   const id = setImmediate(fn, ms)
   return () => clearImmediate(id)
 }
+
+import uuid_v5 from 'uuid/v5'
+export const spawnUuid = (
+  namespace = 'e72bc52c-7700-11eb-9439-0242ac130002'
+) => {
+  const name = Date.now() + '-' + Math.random()
+  return uuid_v5(name, namespace)
+}

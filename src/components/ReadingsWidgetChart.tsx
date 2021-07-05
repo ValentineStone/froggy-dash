@@ -4,17 +4,21 @@ import styled from 'styled-components'
 import { database } from '../firebase'
 import { useSelector, log, cx, timeout } from '../utils'
 import Chart from './Chart'
+import SignalCellularConnectedNoInternet0Bar from '@material-ui/icons/SignalCellularConnectedNoInternet0Bar'
+import SignalCellularAlt from '@material-ui/icons/SignalCellularAlt'
 
-const IndicatorCircle = styled.div`
+const IndicatorIconOff = styled(SignalCellularConnectedNoInternet0Bar).attrs(() => ({ color: 'secondary' }))`
   position: absolute;
-  margin: 5px;
-  width: 1em;
-  height: 1em;
-  border-radius: 1em;
-  background: red;
-  &.online {
-    background: green;
-  }
+  top: 5px;
+  left: 5px;
+`
+const IndicatorIconOn = styled(SignalCellularAlt).attrs(() => ({ color: 'primary' }))`
+  position: absolute;
+  top: 5px;
+  left: 5px;
+`
+const IndicatorRoot = styled.div`
+  position: relative;
 `
 const Indicator = ({ last, period }) => {
   const [online, setOnline] = useState(Date.now() - last <= period)
@@ -27,10 +31,13 @@ const Indicator = ({ last, period }) => {
       setOnline(false)
     }
   }, [last, period])
-  return <IndicatorCircle className={online ? 'online' : ''} />
+  return <IndicatorRoot>
+    {online ? <IndicatorIconOn /> : <IndicatorIconOff />}
+  </IndicatorRoot>
 }
 
 const options = (data, labels, min, max, valueSeriesName) => {
+  const step = Math.abs(max - min)
   const pad = Math.abs(max - min) / 10
   return {
     type: 'line',
@@ -62,11 +69,12 @@ const options = (data, labels, min, max, valueSeriesName) => {
           }
         },
         y: {
-          min: min - pad,
-          max: max + pad,
+          min: min,
+          max: max,
           ticks: {
-            display: false,
-            callback: v => v === min || v === max ? '' : null,
+            count: 2,
+            stepSize: step,
+            callback: v => v === min ? min : (v === max ? max : null),
             minRotation: 0,
             maxRotation: 0,
           },
@@ -115,7 +123,10 @@ const formatDate = v => new Date(+v).toLocaleString('ru-RU', {
   second: '2-digit',
 })
 
-const devmodeSelector = store => store.devmode
+import { configGet } from './HardwareConfigEditorWidget'
+import { Typography } from '@material-ui/core'
+
+const configSelector = multifrog => store => [store.hardware[multifrog], store.devmode]
 const ReadingsWidgetChart = ({ uuid, sensor, since = undefined }) => {
   const [readings, setReadings] = useState({})
   const [updated, setUpdated] = useState(Date.now())
@@ -123,13 +134,21 @@ const ReadingsWidgetChart = ({ uuid, sensor, since = undefined }) => {
     if (since === undefined) return
     const ref = database.ref('/readings/' + uuid).orderByKey().startAt(since)
     const onValue = v => {
-      setReadings(v.val() || {})
-      setUpdated(Date.now())
+      const readings = v.val() || {}
+      if (Object.keys(readings).length) {
+        setReadings(readings)
+        setUpdated(Date.now())
+      } else {
+        database.ref('/readings/' + uuid).limitToLast(3).get().then(v => {
+          setReadings(v.val() || {})
+          setUpdated(Date.now())
+        }).catch(e => { })
+      }
     }
     ref.on('value', onValue)
     return () => ref.off('value', onValue)
   }, [uuid, since])
-  const devmode = useSelector(devmodeSelector)
+  const [config, devmode] = useSelector(configSelector(sensor.multifrog))
   const { lowerThreshold, upperThreshold, valueSeriesName } = sensor.meta
   const keys = Object.keys(readings)
   const values = Object.values(readings)
@@ -137,6 +156,7 @@ const ReadingsWidgetChart = ({ uuid, sensor, since = undefined }) => {
   const undermin = values.length && values[values.length - 1] <= lowerThreshold
   const labels = keys.map(formatDate)
   const lastupdated = keys.length && +keys[keys.length - 1]
+  const period = configGet(config, sensor.frog, uuid, 'period')
   const chartjs = options(
     values,
     labels,
@@ -145,11 +165,17 @@ const ReadingsWidgetChart = ({ uuid, sensor, since = undefined }) => {
     valueSeriesName
   )
   return <>
-    <Indicator last={lastupdated} period={20000} />
+    <Indicator last={lastupdated} period={period} />
     <Chart key={updated} chartjs={chartjs} style={{
       border: '2px solid black',
-      backgroundColor: overmax ? '#ff6044' : (undermin ? '#8aecff' : undefined),
+      backgroundColor: overmax ? '#ffd1c9' : (undermin ? '#e3e8ff' : undefined),
     }} />
+    <div>
+      <Typography variant="h6" display="inline" color={overmax ? 'secondary' : (undermin ? 'primary' : 'initial')}>
+        {values[values.length - 1]}
+      </Typography>
+      {' at '}{labels[labels.length - 1]}
+    </div>
     {devmode && `[${uuid}](${keys.length})`}
   </>
 }

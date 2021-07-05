@@ -1,6 +1,7 @@
-import { database, firebase, onLogin, get_value, Ref } from './firebase'
+import { database, firebase, onLogin, Ref } from './firebase'
 import { store } from './store'
 import { once, subscribe, unsubs } from './utils'
+import { parse as parseConfig } from './components/HardwareConfigEditorWidget'
 
 const attachModel = (type, uuid, children?, ...restChildren) => {
   const childTypes = children ? children.split(',') : []
@@ -35,7 +36,13 @@ const attach = (type, uuid, transform = (v: Ref) => v as any) => subscribe(
   'value',
   v => store.dispatch({
     type: 'set',
-    value: [type, state => ({ ...state, [uuid]: v.val() })]
+    value: [type, ({ ...state }) => {
+      if (v.val() === null)
+        delete state[uuid]
+      else
+        state[uuid] = v.val()
+      return state
+    }]
   })
 )
 
@@ -58,12 +65,24 @@ const attachUser = (uid, callback) => {
   }
 }
 
+const attachRaw = (type, path, uuid, transform) => subscribe(
+  database.ref(path + '/' + uuid),
+  'value',
+  v => store.dispatch({
+    type: 'set',
+    value: [type, state => ({ ...state, [uuid]: transform(v.val()) })]
+  })
+)
+
 onLogin(async auth => {
   const uid = auth.currentUser.uid
-  return attachUser(uid, ({ multifrogs }) => {
+  return attachUser(uid, ({ multifrogs, views }) => {
     const unsub = unsubs()
+    for (const view in views)
+      unsub(attach('views', view))
     for (const multifrog in multifrogs) {
       unsub(attach('multifrogs', multifrog))
+      unsub(attachRaw('hardware', `/users/${uid}/hardware`, multifrog, parseConfig))
       const frogs = multifrogs[multifrog]
       for (const frog in frogs) {
         unsub(attach('frogs', frog))

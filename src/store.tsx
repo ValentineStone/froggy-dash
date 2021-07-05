@@ -83,7 +83,8 @@ const default_state = {
   multifrogs: {},
   frogs: {},
   sensors: {},
-  readings: {},
+  hardware: {},
+  views: {},
 }
 
 function rootReducer(state = default_state, action) {
