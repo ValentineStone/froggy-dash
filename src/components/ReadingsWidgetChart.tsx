@@ -129,6 +129,28 @@ const formatDate = v => new Date(+v).toLocaleString('ru-RU', {
 import { configGet } from './HardwareConfigEditorWidget'
 import { Typography } from '@material-ui/core'
 
+const Name = styled.div`
+  display: flex;
+  align-items: center;
+  & > *:last-child {
+    flex: 1;
+    padding-left: 0.3em;
+  }
+`
+
+const Sub = styled.div`
+  display: flex;
+  align-items: center;
+  & > *:last-child {
+    padding-left: 0.3em;
+    text-align: right;
+  }
+  & > *:first-child {
+    flex: 1;
+    text-align: center;
+  }
+`
+
 const configSelector = multifrog => store => [store.hardware[multifrog], store.devmode]
 const ReadingsWidgetChart = ({ uuid, sensor, since = undefined }) => {
   const [readings, setReadings] = useState({})
@@ -167,17 +189,24 @@ const ReadingsWidgetChart = ({ uuid, sensor, since = undefined }) => {
     upperThreshold,
     valueSeriesName
   )
+  const textcolor = overmax ? 'secondary' : (undermin ? 'primary' : 'initial')
+  const background = overmax ? '#ffd1c9' : (undermin ? '#e3e8ff' : undefined)
   return <>
-    <IndicatorFloat last={lastupdated} period={period} />
+    <Name>
+      <Indicator last={lastupdated} period={period} />
+      <Typography variant="h6">
+        {sensor.name || 'Sensor ' + uuid.slice(0, 7)}
+      </Typography>
+    </Name>
     <Chart key={updated} chartjs={chartjs} style={{
       border: '2px solid black',
-      backgroundColor: overmax ? '#ffd1c9' : (undermin ? '#e3e8ff' : undefined),
+      backgroundColor: background,
     }} />
     <div>
-      <Typography variant="h6" display="inline" color={overmax ? 'secondary' : (undermin ? 'primary' : 'initial')}>
-        {values[values.length - 1]}
+      <Typography variant="h6" display="inline" color={textcolor}>
+        {values[values.length - 1]}{' '}
       </Typography>
-      {' at '}{labels[labels.length - 1]}
+      {'at '}{labels[labels.length - 1]}
     </div>
     {devmode && `[${uuid}](${keys.length})`}
   </>
