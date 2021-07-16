@@ -10,12 +10,23 @@ import ExpandMore from '@material-ui/icons/ExpandMore'
 import Save from '@material-ui/icons/Save'
 import { database } from '../firebase'
 
+import { Indicator } from './ReadingsWidgetChart'
+
 const Flex = styled.div`
   display: flex;
   flex-grow: 1;
   flex-shrink: 1;
   flex-basis: auto;
   & > * { flex: 1 }
+`
+
+const MultiName = styled.div`
+  display: flex;
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-basis: auto;
+  & > *:first-child { flex: 1 }
+  padding-right: 1em;
 `
 
 const ItemSingle = ({ label, children = null, renames = null, ...rest }: any) => {
@@ -81,7 +92,10 @@ export const DevicesListView = () => {
           <Item
             key={mId}
             renames={`/multifrogs/${mId}`}
-            label={m.name || fakename('Multifrog', mId)}
+            label={<MultiName>
+              <div>{m.name || fakename('Multifrog', mId)}</div>
+              <Indicator last={m.online} period={30000} />
+            </MultiName>}
             href={`#/multifrog/${mId}`}
           >
             {map(frogs, m.frogs, (fId, f) =>

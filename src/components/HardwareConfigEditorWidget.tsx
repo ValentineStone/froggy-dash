@@ -73,7 +73,7 @@ const HardwareConfigEditorWidget = ({ uid, uuid }) => {
   const [open, setOpen] = useState(false)
   const toggle = useCallback(() => setOpen(open => !open), [])
   useEffect(() => {
-    const ref = database.ref(`/users/${uid}/hardware/${uuid}`)
+    const ref = database.ref(`/multifrogs/${uuid}/hardware`)
     const onValue = v => {
       const raw = v.val() || ''
       const parsed = parse(raw)
@@ -102,7 +102,7 @@ const HardwareConfigEditorWidget = ({ uid, uuid }) => {
     }
   }
   const onSave = useCallback(() => {
-    database.ref(`/users/${uid}/hardware/${uuid}`).set(pack(parsed))
+    database.ref(`/multifrogs/${uuid}/hardware`).set(pack(parsed))
   }, [parsed])
   return (
     <CardSlim>

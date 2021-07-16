@@ -65,8 +65,8 @@ const attachUser = (uid, callback) => {
   }
 }
 
-const attachRaw = (type, path, uuid, transform) => subscribe(
-  database.ref(path + '/' + uuid),
+const attachRaw = (type, uuid, path, transform) => subscribe(
+  database.ref(path),
   'value',
   v => store.dispatch({
     type: 'set',
@@ -82,7 +82,7 @@ onLogin(async auth => {
       unsub(attach('views', view))
     for (const multifrog in multifrogs) {
       unsub(attach('multifrogs', multifrog))
-      unsub(attachRaw('hardware', `/users/${uid}/hardware`, multifrog, parseConfig))
+      unsub(attachRaw('hardware', multifrog, `/multifrogs/${multifrog}/hardware`, parseConfig))
       const frogs = multifrogs[multifrog]
       for (const frog in frogs) {
         unsub(attach('frogs', frog))

@@ -7,20 +7,19 @@ import Chart from './Chart'
 import SignalCellularConnectedNoInternet0Bar from '@material-ui/icons/SignalCellularConnectedNoInternet0Bar'
 import SignalCellularAlt from '@material-ui/icons/SignalCellularAlt'
 
-const IndicatorIconOff = styled(SignalCellularConnectedNoInternet0Bar).attrs(() => ({ color: 'secondary' }))`
-  position: absolute;
-  top: 5px;
-  left: 5px;
-`
-const IndicatorIconOn = styled(SignalCellularAlt).attrs(() => ({ color: 'primary' }))`
-  position: absolute;
-  top: 5px;
-  left: 5px;
-`
+const IndicatorIconOff = styled(SignalCellularConnectedNoInternet0Bar).attrs(() => ({ color: 'secondary' }))``
+const IndicatorIconOn = styled(SignalCellularAlt).attrs(() => ({ color: 'primary' }))``
 const IndicatorRoot = styled.div`
   position: relative;
+  & > * {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+  }
 `
-const Indicator = ({ last, period }) => {
+
+export const Indicator = ({ last, period: _period = 0, grace = 10000 }) => {
+  const period = _period + grace
   const [online, setOnline] = useState(Date.now() - last <= period)
   useEffect(() => {
     const untill = Math.max(0, period - (Date.now() - last))
@@ -31,8 +30,12 @@ const Indicator = ({ last, period }) => {
       setOnline(false)
     }
   }, [last, period])
+  return online ? <IndicatorIconOn /> : <IndicatorIconOff />
+}
+
+const IndicatorFloat = ({ last, period = 0, grace = 10000 }) => {
   return <IndicatorRoot>
-    {online ? <IndicatorIconOn /> : <IndicatorIconOff />}
+    <Indicator last={last} period={period} grace={grace} />
   </IndicatorRoot>
 }
 
@@ -165,7 +168,7 @@ const ReadingsWidgetChart = ({ uuid, sensor, since = undefined }) => {
     valueSeriesName
   )
   return <>
-    <Indicator last={lastupdated} period={period} />
+    <IndicatorFloat last={lastupdated} period={period} />
     <Chart key={updated} chartjs={chartjs} style={{
       border: '2px solid black',
       backgroundColor: overmax ? '#ffd1c9' : (undermin ? '#e3e8ff' : undefined),
