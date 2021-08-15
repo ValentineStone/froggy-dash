@@ -12,8 +12,6 @@ const ShiedRoot = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-
-  background: #f9f9f9;
 `
 
 const ShiedInner = styled.div`
@@ -31,7 +29,7 @@ const ShiedInner = styled.div`
 `
 
 const ShiedLogo = styled.img.attrs(
-  () => ({ src: '/assets/logo.png' })
+  () => ({ src: '/favicon.png' })
 )`
   display: block;
   padding-bottom: 1rem;

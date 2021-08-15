@@ -41,7 +41,7 @@ const timeframes = [
 ]
 const standartTimeframe = tf => timeframes.find(v => v[0] === tf)
 
-const SinceSelector = memo<any>(({ onSelected = null, keep = undefined }) => {
+const SinceSelector = ({ onSelected = null, keep = undefined }) => {
   const [timeframe, setTimeframe] = useLocalStorageState('SinceSelector:timeframe:' + keep, String(days(1)))
   const [custom, setCustom] = useLocalStorageState('SinceSelector:custom:' + keep, false)
   const [since, setSince] = useLocalStorageState('SinceSelector:since:' + keep, sinceStr(days(1)))
@@ -89,6 +89,6 @@ const SinceSelector = memo<any>(({ onSelected = null, keep = undefined }) => {
       value={sinceDate(+currentsince)}
     />
   </>
-})
+}
 
 export default SinceSelector

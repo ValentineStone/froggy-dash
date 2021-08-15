@@ -22,6 +22,7 @@
     "react-dom": "^17.0.2",
     "react-firebaseui": "^4.1.0",
     "react-inspector": "^5.1.1",
+    "react-map-interaction": "^2.1.0",
     "react-redux": "^7.2.3",
     "redux": "^4.0.5",
     "styled-components": "^5.2.3",

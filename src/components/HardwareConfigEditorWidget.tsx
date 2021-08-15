@@ -66,7 +66,7 @@ export const pack = parsed => parsed.map(({ uuid, number, sensors }) =>
 
 const selector = store => [store.frogs, store.sensors]
 
-const HardwareConfigEditorWidget = ({ uid, uuid }) => {
+const HardwareConfigEditorWidget = ({ uid = undefined, uuid }) => {
   const [frogs, dbsensors] = useSelector(selector)
   const [raw, setRaw] = useState('')
   const [parsed, setParsed] = useState([])

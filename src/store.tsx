@@ -4,7 +4,8 @@ import { set as lodashSet, get as lodashGet } from 'lodash'
 const selected_from_hash = () => {
   const hash = location.hash.split('/').slice(1)
   return {
-    presentation: hash[0],
+    view: hash[0],
+    subview: hash[1],
     multifrog: hash[1],
     frog: hash[2],
     sensor: hash[3],
@@ -85,6 +86,7 @@ const default_state = {
   sensors: {},
   hardware: {},
   views: {},
+  extras: {},
 }
 
 function rootReducer(state = default_state, action) {

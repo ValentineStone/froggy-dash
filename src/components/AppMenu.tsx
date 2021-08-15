@@ -2,9 +2,6 @@ import { useEffect, useState, useCallback, memo } from 'react'
 import styled from 'styled-components'
 
 const MenuRoot = styled.div`
-  background: white;
-  box-shadow: 0 0 8px #0000001e;
-  padding-top: 2rem;
   overflow: hidden;
 `
 

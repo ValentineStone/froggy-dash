@@ -4,8 +4,7 @@ import { set as lodashSet, get as lodashGet } from 'lodash'
 const selected_from_hash = () => {
   const hash = location.hash.split('/').slice(1)
   return {
-    view: hash[0],
-    subview: hash[1],
+    presentation: hash[0],
     multifrog: hash[1],
     frog: hash[2],
     sensor: hash[3],

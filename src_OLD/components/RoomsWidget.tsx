@@ -48,7 +48,7 @@ const RoomsWidget = () => {
         </Button>
       </div>
       {Object.entries<any>(views).map(([uuid, room]) =>
-        <RoomWidget key={uuid} uuid={uuid} room={room} />
+        room.type === 'room' ? <RoomWidget key={uuid} uuid={uuid} room={room} /> : null
       )}
     </RoomViewItems>
   )

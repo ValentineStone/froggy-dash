@@ -1,7 +1,9 @@
 import { database, firebase, onLogin, Ref } from './firebase'
 import { store } from './store'
-import { once, subscribe, unsubs } from './utils'
+import { once, subscribe, timeout, unsubs } from './utils'
 import { parse as parseConfig } from './components/HardwareConfigEditorWidget'
+import { useSelector } from 'react-redux'
+import { useEffect, useState } from 'react'
 
 const attachModel = (type, uuid, children?, ...restChildren) => {
   const childTypes = children ? children.split(',') : []
@@ -74,6 +76,15 @@ const attachRaw = (type, uuid, path, transform) => subscribe(
   })
 )
 
+const attachRef = (type, uuid, ref, transform) => subscribe(
+  ref,
+  'value',
+  v => store.dispatch({
+    type: 'set',
+    value: [type, state => ({ ...state, [uuid]: transform(v.val()) })]
+  })
+)
+
 onLogin(async auth => {
   const uid = auth.currentUser.uid
   return attachUser(uid, ({ multifrogs, views }) => {
@@ -89,6 +100,23 @@ onLogin(async auth => {
         const sensors = frogs[frog]
         for (const sensor in sensors) {
           unsub(attach('sensors', sensor))
+          unsub(attachRef('extras', sensor, database.ref('/readings/' + sensor).orderByKey().limitToLast(1), val => {
+            const [lastReading] = Object.entries(val) || []
+            if (lastReading) {
+              return {
+                lastReadingAt: +lastReading[0],
+                lastReading: lastReading[1],
+                onlineAt: +lastReading[0],
+                onlineAtTXT: new Date(+lastReading[0]).toLocaleString('ru-RU'),
+              }
+            } else {
+              return {
+                lastReadingAt: 0,
+                lastReading: undefined,
+                onlineAt: 0,
+              }
+            }
+          }))
           //unsub(attach('readings', sensor, d => d.limitToLast(30)))
         }
       }
