@@ -57,7 +57,7 @@ const options = (data, labels, min, max, valueSeriesName) => {
       scales: {
         x: {
           grid: {
-            //display: false,
+            display: false,
             drawBorder: false,
           },
           ticks: {
@@ -151,8 +151,6 @@ const Sub = styled.div`
   }
 `
 
-import { Line } from 'react-chartjs-2'
-
 const configSelector = multifrog => store => [store.hardware[multifrog], store.devmode]
 const ReadingsWidgetChart = ({ uuid, sensor, since = undefined }) => {
   const [readings, setReadings] = useState({})
@@ -181,7 +179,6 @@ const ReadingsWidgetChart = ({ uuid, sensor, since = undefined }) => {
   const values = Object.values(readings)
   const overmax = values.length && values[values.length - 1] >= upperThreshold
   const undermin = values.length && values[values.length - 1] <= lowerThreshold
-  const data = Object.entries(readings).map(([x,y]) => ({x,y:+y}))
   const labels = keys.map(formatDate)
   const lastupdated = keys.length && +keys[keys.length - 1]
   const period = configGet(config, sensor.frog, uuid, 'period')
@@ -201,10 +198,10 @@ const ReadingsWidgetChart = ({ uuid, sensor, since = undefined }) => {
         {sensor.name || 'Sensor ' + uuid.slice(0, 7)}
       </Typography>
     </Name>
-    <Line
-      data={chartjs.data}
-      options={chartjs.options}
-    />
+    <Chart key={updated} chartjs={chartjs} style={{
+      border: '2px solid black',
+      backgroundColor: background,
+    }} />
     <div>
       <Typography variant="h6" display="inline" color={textcolor}>
         {values[values.length - 1]}{' '}
