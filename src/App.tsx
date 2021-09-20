@@ -106,6 +106,10 @@ html {
   top: 45%;
   margin-right: 50px;
 }
+
+svg, button {
+  cursor: pointer;
+}
 `
 
 import SplitView from './components/SplitView'
@@ -126,6 +130,7 @@ import StatusKeeper from './components/StatusKeeper'
 import { useRef } from 'react'
 import { MapInteractionCSS } from 'react-map-interaction'
 import { ObjectInspector } from 'react-inspector'
+import FirebaseEditorField from './components/FirebaseEditorField'
 
 export const name = (some, type, uuid) => some?.name || type + ' ' + uuid.slice(0, 7)
 
@@ -262,13 +267,26 @@ const SlimSubmenuPlans = () => {
     <div>
       <SlimButton icon="assets/plans.svg" label="Plan" className="black" />
       {Object.entries<any>(views).map(([uuid, view]) =>
-        view.type === 'plan' ? <SlimLink key={uuid} href={'#/plans/' + uuid}>{view.name}</SlimLink> : null
+        view.type === 'plan' ? (
+          <SlimLink key={uuid} href={'#/plans/' + uuid}>
+            <Flexyfy>
+              <FirebaseEditorField value={view.name} path={`/views/${uuid}/name`} />
+            </Flexyfy>
+          </SlimLink>
+        ) : null
       )}
     </div>
   )
 }
+const Flexyfy = styled.span`
+  display: flex;
+  & > :nth-child(1) { flex-grow: 1 }
+`
 
-const Smallify = styled.small`padding-left: 1em`
+const Smallify = styled.small`
+  padding-left: 1em;
+  display: block;
+`
 
 const multifrogsSelector = store => [store.multifrogs, store.frogs]
 const SlimSubmenuFrogs = () => {
@@ -277,9 +295,19 @@ const SlimSubmenuFrogs = () => {
     <div>
       <SlimButton icon="assets/frog.svg" label="Frogs" className="black" />
       {Object.entries<any>(multifrogs).map(([uuid, multifrog]) => <Fragment key={uuid}>
-        <SlimLink href={'#/multifrogs/' + uuid}>{name(multifrog, 'Multifrog', uuid)}</SlimLink>
+        <SlimLink href={'#/multifrogs/' + uuid}>
+          <Flexyfy>
+            <FirebaseEditorField value={name(multifrog, 'Multifrog', uuid)} path={`/multifrogs/${uuid}/name`} />
+          </Flexyfy>
+        </SlimLink>
         {Object.keys(multifrog.frogs).map(uuid =>
-          <SlimLink key={uuid} href={'#/frogs/' + uuid}><Smallify>{name(frogs[uuid], 'Frog', uuid)}</Smallify></SlimLink>
+          <SlimLink key={uuid} href={'#/frogs/' + uuid}>
+            <Smallify>
+              <Flexyfy>
+                <FirebaseEditorField value={name(frogs[uuid], 'Frog', uuid)} path={`/frogs/${uuid}/name`} />
+              </Flexyfy>
+            </Smallify>
+          </SlimLink>
         )}
       </Fragment>)}
     </div>
@@ -290,7 +318,7 @@ const extrasSelector = store => [
   store.extras,
   Object.fromEntries(Object.entries<any>(store.extras).map(([uuid, extra]) => [
     uuid,
-    name(store[extra.type?.toLowerCase?.() + 's'][uuid], extra.type, uuid)
+    name(store[extra.type?.toLowerCase?.() + 's']?.[uuid], extra.type, uuid)
   ]))
 ]
 const SlimSubmenuErrors = () => {
@@ -299,7 +327,9 @@ const SlimSubmenuErrors = () => {
     <div>
       <SlimButton icon="assets/caution.svg" label="Errors" className="black" />
       {Object.entries<any>(extras).map(([uuid, extra]) =>
-        typeof extra?.status === 'string' ? <SlimLink key={uuid}><b>{names[uuid]}:</b><br />{extra?.status}</SlimLink> : null
+        typeof extra?.status === 'string' ? <SlimLink key={uuid}>
+          <b>{names[uuid]}:</b><br />{extra?.status}
+        </SlimLink> : null
       )}
     </div>
   )
@@ -359,8 +389,8 @@ const DialogClose = styled.button`
 const sensorsSelector = (uuid, type) => store => {
   if (type === 'frogs') return store.frogs[uuid]?.sensors || []
   let sensors = []
-  for (const frog in store.dbuser.multifrogs[uuid])
-    sensors.push(...Object.keys(store.dbuser.multifrogs[uuid][frog]))
+  for (const frog in (store.dbuser.multifrogs?.[uuid] || {}))
+    sensors.push(...Object.keys(store.dbuser.multifrogs?.[uuid]?.[frog] || {}))
   return sensors
 }
 const FrogsDialog = () => {
@@ -418,30 +448,55 @@ const PlanView = () => {
   )
 }
 
-const statusSelector = uuid => store => store.extras[uuid]?.status
+const miniExtrasSelector = uuid => store => store.extras[uuid]
+const frogSelector = uuid => store => store.frogs[uuid]
 const PlanFrogIcon = ({ x, y, uuid }) => {
-  const status = useSelector(statusSelector(uuid))
-  return (<a style={{ top: y, left: x }} href={'#/frogs/' + uuid} key={uuid}>
-    <img src={typeof status === 'string' ? 'assets/frog-red.svg' : (status === undefined ? 'assets/frog.svg' : 'assets/frog-green.svg')} />
-  </a>
+  const frog = useSelector(frogSelector(uuid))
+  const extras = useSelector(miniExtrasSelector(uuid))
+  const status = extras?.status
+  console.log(extras)
+  return (
+    <Tooltip title={<>
+      {name(frog, 'Frog', uuid)}<br/>
+      {status}
+    </>}>
+      <a style={{ top: y, left: x }} href={'#/frogs/' + uuid} key={uuid}>
+        <img src={typeof status === 'string' ? 'assets/frog-red.svg' : (status === undefined ? 'assets/frog.svg' : 'assets/frog-green.svg')} />
+      </a>
+    </Tooltip>
   )
 }
+
+import { createMuiTheme, ThemeProvider, Tooltip } from '@material-ui/core'
+import { from } from 'core-js/core/array'
+const theme = createMuiTheme({
+  palette: {
+    primary: {
+      main: 'rgb(83,159,111)',
+    },
+    secondary: {
+      main: 'rgb(245, 0, 87)',
+    },
+  },
+})
 
 export default function App() {
   return (
     <Provider>
-      <CssReset />
-      <CssGlobals />
-      <AuthShield>
-        <StatusKeeper />
-        <AppMenuDrawer />
-        <SlimSubmenuDrawer />
-        <SplitView left size={105} classNameRoot="expands" classNameWide="panel-wide" classNameSlim="panel-slim">
-          <SlimMenu />
-          <PlanView />
-        </SplitView>
-        <FrogsDialog />
-      </AuthShield>
+      <ThemeProvider theme={theme}>
+        <CssReset />
+        <CssGlobals />
+        <AuthShield>
+          <StatusKeeper />
+          <AppMenuDrawer />
+          <SlimSubmenuDrawer />
+          <SplitView left size={105} classNameRoot="expands" classNameWide="panel-wide" classNameSlim="panel-slim">
+            <SlimMenu />
+            <PlanView />
+          </SplitView>
+          <FrogsDialog />
+        </AuthShield>
+      </ThemeProvider>
     </Provider>
   )
 }

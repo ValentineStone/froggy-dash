@@ -22,7 +22,7 @@ const exportExcel = (uuids, separator, since) => {
     const name = sensor.name || 'Sensor-' + uuid
     const type = sensor.meta.valueSeriesName
     const ref = database.ref('/readings/' + uuid).orderByKey().startAt(since)
-    once(ref, 'value')
+    once((ref as any), 'value')
       .then(v => v.val())
       .then(readings => {
         if (readings) {
@@ -41,16 +41,19 @@ const exportExcel = (uuids, separator, since) => {
 
 }
 
-const ExportWidget = ({ sensors = [] }) => {
+const ExportWidget = ({ sensors = [], since: forceSince = undefined }) => {
   const [since, setSince] = useState(String(Date.now()))
-  const exportSemi = () => exportExcel(sensors, ';', since)
-  const exportComma = () => exportExcel(sensors, ',', since)
+  const activeSince = forceSince === undefined ? since : forceSince
+  const exportSemi = () => exportExcel(sensors, ';', activeSince)
+  const exportComma = () => exportExcel(sensors, ',', activeSince)
   return (
     <Card>
-      <CardContent>
-        <Typography variant="h6" gutterBottom>Export</Typography>
-        <SinceSelector onSelected={setSince} keep="export" />
-      </CardContent>
+      {forceSince === undefined &&
+        <CardContent>
+          <Typography variant="h6" gutterBottom>Export</Typography>
+          <SinceSelector onSelected={setSince} keep="export" />
+        </CardContent>
+      }
       <CardActions>
         <Button color="primary" onClick={exportSemi}>Export Excel (;)</Button>
         <Button color="primary" onClick={exportComma}>Export Excel (,)</Button>
@@ -60,3 +63,14 @@ const ExportWidget = ({ sensors = [] }) => {
 }
 
 export default ExportWidget
+
+
+
+export const ExportWidgetMini = ({ sensors = [], since }) => {
+  const exportSemi = () => exportExcel(sensors, ';', since)
+  const exportComma = () => exportExcel(sensors, ',', since)
+  return <>
+    <Button color="primary" onClick={exportSemi}>Export (;)</Button>
+    <Button color="primary" onClick={exportComma}>Export (,)</Button>
+  </>
+}

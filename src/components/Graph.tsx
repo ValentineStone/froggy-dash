@@ -1,4 +1,4 @@
-import { log, useSelector } from '../utils'
+import { cx, log, useSelector, useToggle } from '../utils'
 import { ObjectInspector } from 'react-inspector'
 import { Fragment, memo, useEffect, useState } from 'react'
 import { database } from '../firebase'
@@ -7,6 +7,9 @@ import styled from 'styled-components'
 import { Scatter } from 'react-chartjs-2'
 import { useMemo } from 'react'
 import SplitView from './SplitView'
+import FirebaseEditorField from './FirebaseEditorField'
+import SettingsIcon from '@material-ui/icons/Settings'
+import SettingsOutlinedIcon from '@material-ui/icons/SettingsOutlined'
 
 export const name = (some, type, uuid) => some?.name || type + ' ' + uuid.slice(0, 7)
 
@@ -22,10 +25,27 @@ export default function Devmode() {
   </>
 }
 
-const Box = styled.div`border: 1px solid black; padding: 0.5em; margin: 0.5em auto`
+const underminColor = '#6A5ACD'
+const overmaxColor = '#fe0909'
+
+const Box = styled.div`
+  border: 1px solid black;
+  padding: 0.5em;
+  margin: 0.5em auto;
+
+  &.undermin {
+    border-color: ${underminColor};
+    color: ${underminColor};
+  }
+
+  &.overmax {
+    border-color: ${overmaxColor};
+    color: ${overmaxColor};
+  }
+`
 
 const configSelector = multifrog => store => store.hardware[multifrog]
-export const Graph = memo<any>(({ uuid, sensor, since }) => {
+export const Graph = memo<any>(({ uuid, sensor, since, extra }) => {
   const [readings, setReadings] = useState({})
   const [updated, setUpdated] = useState(Date.now())
   useEffect(() => {
@@ -40,15 +60,29 @@ export const Graph = memo<any>(({ uuid, sensor, since }) => {
     return () => ref.off('value', onValue)
   }, [uuid, since])
   const multi_config = useSelector(configSelector(sensor.multifrog))
-  const { lowerThreshold, upperThreshold, valueSeriesName } = sensor.meta
+  const {
+    lowerThreshold: lowerThresholdInitial,
+    upperThreshold: upperThresholdInitial,
+    valueSeriesName
+  } = sensor.meta
+  const [lowerThreshold, setLowerThreshold] = useState(lowerThresholdInitial)
+  const [upperThreshold, setUpperThreshold] = useState(upperThresholdInitial)
   const values = Object.values(readings)
-  const overmax = values.length && values[values.length - 1] >= upperThreshold
-  const undermin = values.length && values[values.length - 1] <= lowerThreshold
-  const config = configGet(multi_config, sensor.frog, uuid, true)
-  const keys = Object.keys(readings)
+  const overmax = values.length && values[values.length - 1] >= upperThresholdInitial
+  const undermin = values.length && values[values.length - 1] <= lowerThresholdInitial
   const data = Object.entries(readings).map(([x, y]) => ({ x: +x, y }))
-  return <Box>
-    {values.length
+  const [miniSettings, toggleMiniSettings] = useToggle(useState(false))
+  return <Box className={cx({ overmax, undermin })}>
+    <GraphHeader>
+      <FirebaseEditorField value={name(sensor, 'Sensor', uuid)} path={`/sensors/${uuid}/name`} />
+      {miniSettings ? <SettingsIcon onClick={toggleMiniSettings} /> : <SettingsOutlinedIcon onClick={toggleMiniSettings} />}
+    </GraphHeader>
+    {extra?.lastReading !== undefined &&
+      <GraphFooter>
+        Last: {extra.lastReading} at {formatDate(extra.lastReadingAt)}
+      </GraphFooter>
+    }
+    {!!values.length
       ? <Scatter data={{
         datasets: [{
           label: valueSeriesName,
@@ -56,7 +90,7 @@ export const Graph = memo<any>(({ uuid, sensor, since }) => {
         }],
       }} options={{
         animation: false,
-        aspectRatio: 3 / 4,
+        aspectRatio: 4 / 3,
         plugins: {
           legend: { display: false },
           tooltip: {
@@ -79,7 +113,7 @@ export const Graph = memo<any>(({ uuid, sensor, since }) => {
             pointBorderWidth: 0,
             pointHitRadius: 10,
 
-            borderColor: 'black',
+            borderColor: undermin ? underminColor : (overmax ? overmaxColor : 'black'),
             borderWidth: 1,
           },
         },
@@ -103,7 +137,34 @@ export const Graph = memo<any>(({ uuid, sensor, since }) => {
           },
         },
       }} />
-      : 'No no readings in selected timeframe'
+      : <GraphFooter>
+        No readings for selected time
+      </GraphFooter>
+    }
+    {!!values.length && <>
+      <GraphFooter>
+        <TextField
+          margin="none"
+          type="number"
+          label="Min"
+          value={lowerThreshold}
+          onChange={e => setLowerThreshold(Math.round(+e.target.value))}
+        />
+        <TextField
+          margin="none"
+          type="number"
+          label="Max"
+          value={upperThreshold}
+          onChange={e => setUpperThreshold(Math.round(+e.target.value))}
+        />
+      </GraphFooter>
+      <GraphFooter>
+        <ExportWidgetMini sensors={[uuid]} since={since}></ExportWidgetMini>
+      </GraphFooter>
+    </>}
+    {miniSettings && <GraphFooter>
+      <MetaEditorWidget path={`/sensors/${uuid}`} />
+    </GraphFooter>
     }
   </Box>
 })
@@ -134,11 +195,13 @@ export const configGet = (config, frogUuid, arg2, arg3?) => {
 
 import styles from 'styled-components'
 import ReadingsWidgetChart from './Graph'
+import { ExportWidgetMini } from './ExportWidget'
 import ExportWidget from './ExportWidget'
 import HardResetWidget from './HardResetWidget'
 import { useCallback } from 'react'
 import MetaEditorWidget from './MetaEditorWidget'
 import HardwareConfigEditorWidget from './HardwareConfigEditorWidget'
+import { Button, TextField, Typography } from '@material-ui/core'
 
 const Flex = styles.div`
   display: flex;
@@ -150,12 +213,12 @@ const Flex = styles.div`
   }
   @media only screen and (min-width: 800px) {
     & > * {
-      width: 50%;
+      width: 100%;
     }
   }
   @media only screen and (min-width: 1200px) {
     & > * {
-      width: 25%;
+      width: 50%;
     }
   }
 `
@@ -180,13 +243,29 @@ const RootFlex = styles.div`
 `
 
 const GraphHeader = styled.div`
-  font-size: large;
+  display: flex;
+  font-size: 22px;
+  & > :nth-child(1) {
+    flex-grow: 1;
+  }
+`
+
+const GraphFooter = styled.div`
+  margin-bottom: 0.5em;
+  display: flex;
 `
 
 const Form = styled.div`
+  padding: 0 15px;
   & > * {
     width: 100%;
     margin-bottom: 0.5em;
+  }  
+`
+
+const Iconlist = styled.div`
+  & > * {
+    cursor: pointer;
   }  
 `
 
@@ -210,28 +289,23 @@ export const ReadingsWidget = ({ sensors = null, sensor = null, type = undefined
     <>
       <SinceSelector onSelected={setSince} keep={location.hash} />
       <RootFlex>
-        <div>
+        <Iconlist>
           <img src="assets/graph.svg" onClick={toggleGraph} />
           <img src="assets/export.svg" onClick={toggleExport} />
           <img src="assets/settings.svg" onClick={toggleSettings} />
-        </div>
+        </Iconlist>
         <div>
           {mode === 'graph' && <Flex>
             {picked.map(uuid =>
               !!allSensors[uuid] && (
                 <div key={uuid}>
-                  <GraphHeader>
-                    {name(allSensors[uuid], 'Sensor', uuid)}
-                  </GraphHeader>
                   <Graph
                     key={uuid}
                     uuid={uuid}
                     sensor={allSensors[uuid]}
                     since={since}
+                    extra={extras[uuid]}
                   />
-                  <div>
-                    Last {extras[uuid] && `${extras[uuid]?.lastReading} at ${formatDate(extras[uuid]?.lastReadingAt)}`}
-                  </div>
                 </div>
               )
             )}

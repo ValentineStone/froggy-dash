@@ -6,8 +6,8 @@ import { configGet } from "./Graph"
 
 const updateExtras = (uuid, extras) => store.dispatch({ type: 'set', value: ['extras.' + uuid, s => ({ ...s, ...extras })] })
 
-const GRACE = 30000
-const MULTI_PERIOD = 30000
+const GRACE = 5 * 60 * 1000
+const MULTI_PERIOD = 30 * 1000
 
 const configSelector = multifrog => store => store.hardware[multifrog]
 const statusSelector = uuid => store => [store.sensors[uuid], store.extras[uuid]]
@@ -20,7 +20,7 @@ export const useSensorStatus = uuid => {
 
   useEffect(() => {
     if (!extra || !period) return
-    const untill = Math.max(0, period - (Date.now() - extra.onlineAt))
+    const untill = Math.max(0, period - (Date.now() - extra.onlineAt || 0) + GRACE)
     if (untill) {
       setOnline(true)
       return timeout(() => setOnline(false), untill)
@@ -56,7 +56,7 @@ export const MultifrogStatusKeeper = ({ uuid }) => {
   const multifrog = useSelector(multiSelector(uuid))
   useEffect(() => {
     if (!multifrog) return
-    const untill = Math.max(0, MULTI_PERIOD - (Date.now() - multifrog.online) + GRACE)
+    const untill = Math.max(0, MULTI_PERIOD - (Date.now() - multifrog.online || 0) + GRACE)
     if (untill) {
       updateExtras(uuid, { online: true, type: 'Multifrog' })
       return timeout(() => updateExtras(uuid, { online: false, type: 'Multifrog' }), untill)
