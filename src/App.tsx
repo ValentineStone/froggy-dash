@@ -360,6 +360,7 @@ const SlimSubmenuDrawer = () => {
 
 const DialogRoot = styled.div`
   max-width: 80vw;
+  max-height: 90vh;
   width: 1580px;
   height: 860px;
   border-radius: 20px;
